@@ -33,7 +33,7 @@ inline float to_distance(int pulse_us) {
     return pulse_us / 2000000.0 * speed_of_sound;
 }
 
-double rmotor_cmd, lmotor_cmd, rwheel_encoder, lwheel_encoder;
+double rmotor_cmd, lmotor_cmd, rwheel_encoder, lwheel_encoder, head_servo_cmd;
 
 void update_lmotor_cmd(const std_msgs::Float64::ConstPtr& msg){
     lmotor_cmd = msg->data;
@@ -42,6 +42,11 @@ void update_lmotor_cmd(const std_msgs::Float64::ConstPtr& msg){
 void update_rmotor_cmd(const std_msgs::Float64::ConstPtr& msg){
     rmotor_cmd = msg->data;
 }
+
+void update_head_cmd(const std_msgs::Float64::ConstPtr& msg){
+    head_servo_cmd = msg->data;
+}
+
 
 int main(int argc, char * argv[])
 {
@@ -52,8 +57,10 @@ int main(int argc, char * argv[])
 
    ros::Subscriber rmotor_sub = nh.subscribe("rmotor_cmd", 1, update_rmotor_cmd);
    ros::Subscriber lmotor_sub = nh.subscribe("lmotor_cmd", 1, update_lmotor_cmd);
+   ros::Subscriber head_servo_sub = nh.subscribe("head_servo_cmd", 1, update_head_cmd);
 
-   ros::Publisher rwheel_encoder_pub = nh.advertise<std_msgs::Int32>("rwheel_encoder", 1);
+
+    ros::Publisher rwheel_encoder_pub = nh.advertise<std_msgs::Int32>("rwheel_encoder", 1);
    ros::Publisher lwheel_encoder_pub = nh.advertise<std_msgs::Int32>("lwheel_encoder", 1);
 
     //  front_dist_pin  CH1
@@ -75,7 +82,7 @@ int main(int argc, char * argv[])
 
    ros::Rate rate(50); //50Hz
    while(ros::ok()){
-      connection.setController(rmotor_cmd,lmotor_cmd);
+      connection.setController(rmotor_cmd,lmotor_cmd,head_servo_cmd);
       if(connection.readController()){
 
           std_msgs::Int32 encoder;

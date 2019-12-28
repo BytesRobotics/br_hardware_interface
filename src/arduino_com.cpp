@@ -44,19 +44,24 @@ HardwareCom::HardwareCom(std::string port, int baud): connection(port, baud, ser
   }
 }
 
-bool HardwareCom::setController(double rmotor_cmd, double lmotor_cmd){
+bool HardwareCom::setController(double rmotor_cmd, double lmotor_cmd, double head_cmd){
 //  std::cout << "rmotor_cmd: " << rmotor_cmd << "\n";
 //  std::cout << "lmotor_cmd: " << lmotor_cmd << "\n";
    auto lmotor = static_cast<int>(map<double>(lmotor_cmd, -1, 1, -1000, 1000));
    auto rmotor = static_cast<int>(map<double>(rmotor_cmd, -1, 1, -1000, 1000));
+   auto head = static_cast<int>(map<double>(head_cmd, -1, 1, -1000, 1000));
+
+   constrain(head,   -1000, 1000);
    constrain(lmotor, -1000, 1000);
    constrain(rmotor, -1000, 1000);
 
   //Fill outGoingPacket with four bytes with proper packet structure
-   outgoingPacket[3] = static_cast<uint8_t>(lmotor >> 8);                 //lmotor MSB
-   outgoingPacket[2] = static_cast<uint8_t>(lmotor & 0b0000000011111111); //lmotor LSB
-   outgoingPacket[1] = static_cast<uint8_t>(rmotor >> 8);                 //rmotor  MSB
-   outgoingPacket[0] = static_cast<uint8_t>(rmotor & 0b0000000011111111); //rmotor LSB
+   outgoingPacket[5] = static_cast<uint8_t>(lmotor >> 8);                 //lmotor MSB
+   outgoingPacket[4] = static_cast<uint8_t>(lmotor & 0b0000000011111111); //lmotor LSB
+   outgoingPacket[3] = static_cast<uint8_t>(rmotor >> 8);                 //rmotor  MSB
+   outgoingPacket[2] = static_cast<uint8_t>(rmotor & 0b0000000011111111); //rmotor LSB
+   outgoingPacket[1] = static_cast<uint8_t>(head >> 8);                   //head  MSB
+   outgoingPacket[0] = static_cast<uint8_t>(head & 0b0000000011111111);   //head LSB
 
    //PEC by XORing all values
    outgoingPacket[outgoingPacketLength-1] = outgoingPacket[0];

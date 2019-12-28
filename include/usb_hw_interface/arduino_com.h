@@ -21,9 +21,9 @@ class HardwareCom
 {
   //Serial object that manages USB serial connection
   serial::Serial connection;
-  //Packet structure = |PEC|lwheel MSB|lwheel LSB|rwheel MSB|rwheel LSB
-  const int outgoingPacketLength = 5;
-  uint8_t outgoingPacket[5];   //Packet to the arduino (length = 4 + PEC)
+  //Packet structure = |PEC|lwheel MSB|lwheel LSB|rwheel MSB|rwheel LSB|head MSB|head LSB
+  const int outgoingPacketLength = 7;
+  uint8_t outgoingPacket[7];   //Packet to the arduino (length = 6 + PEC)
   //Packet structure = //Outgoing packet structure: |ch1 LSB|ch1 MSB|ch2 LSB|ch2 MSB|ch3 LSB|ch3 MSB|ch4 LSB|ch4 MSB|ch5 LSB|ch5 MSB|
     // |encoder_left LSB|encoder_left|encoder_left|encoder_left MSB|
     // |encoder_right LSB|encoder_right|encoder_right|encoder_right MSB|
@@ -50,7 +50,7 @@ class HardwareCom
 
 public:
   HardwareCom(std::string port, int baud);            //Constructor
-  bool setController(double rmotor_cmd, double lmotor_cmd); //Sends input commands to arduino zero
+  bool setController(double rmotor_cmd, double lmotor_cmd, double head_cmd); //Sends input commands to arduino zero
   bool readController();                            //Returns data read from the arduino zero
   int getCh1();
   int getCh2();
