@@ -249,9 +249,9 @@ void loop() {
     outGoingPacket[17] = (byte)(right_wheel_pulses >> 24);
 
     FLOATUNION_t latitude;
-    latitude.number = GPS.latitude;
+    latitude.number = GPS.latitudeDegrees;
     FLOATUNION_t longitude;
-    longitude.number = GPS.longitude;
+    longitude.number = GPS.longitudeDegrees;
     
     outGoingPacket[18] = (byte)(latitude.bytes[0]);
     outGoingPacket[19] = (byte)(latitude.bytes[1]);

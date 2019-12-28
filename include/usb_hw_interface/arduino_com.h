@@ -10,13 +10,20 @@
 
 #include "serial/serial.h"
 
+typedef union
+{
+    float number;
+    uint8_t bytes[4];
+} FLOATUNION_t;
+
+
 class HardwareCom
 {
   //Serial object that manages USB serial connection
   serial::Serial connection;
-  //Packet structure = |PEC|lwheel MSB|lwheel LSB|rwheel MSB|rwheel LSB|TEMP|
-  const int outgoingPacketLength = 6;
-  uint8_t outgoingPacket[6];   //Packet to the arduino (length = 4 + PEC)
+  //Packet structure = |PEC|lwheel MSB|lwheel LSB|rwheel MSB|rwheel LSB
+  const int outgoingPacketLength = 5;
+  uint8_t outgoingPacket[5];   //Packet to the arduino (length = 4 + PEC)
   //Packet structure = //Outgoing packet structure: |ch1 LSB|ch1 MSB|ch2 LSB|ch2 MSB|ch3 LSB|ch3 MSB|ch4 LSB|ch4 MSB|ch5 LSB|ch5 MSB|
     // |encoder_left LSB|encoder_left|encoder_left|encoder_left MSB|
     // |encoder_right LSB|encoder_right|encoder_right|encoder_right MSB|
@@ -34,18 +41,32 @@ class HardwareCom
   //  rear_dist_pin   CH4
   //  bottom_dist_pin CH5
 
+  long encoderLeft, encoderRight;
+  FLOATUNION_t latitude, longitude;
+  float speed, angle, altitude; //ground speed, angle from north, and altitude from sea level
+  int fix, fix_quality, satellites;
+
 
 
 public:
   HardwareCom(std::string port, int baud);            //Constructor
-  bool setController(double rmotor_cmd, double lmotor_cmd, unsigned char temperature=25); //Sends input commands to arduino zero
+  bool setController(double rmotor_cmd, double lmotor_cmd); //Sends input commands to arduino zero
   bool readController();                            //Returns data read from the arduino zero
   int getCh1();
   int getCh2();
   int getCh3();
   int getCh4();
   int getCh5();
-  int getCh6();
+  long getEncoderLeft();
+  long getEncoderRight();
+  float getLatitude();
+  float getLongitude();
+  float getSpeed();
+  float getAngle();
+  float getAltitude();
+  int getFix();
+  int getFixQuality();
+  int getNumSatellites();
 };
 
 #endif
