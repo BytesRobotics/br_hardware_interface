@@ -186,8 +186,8 @@ void loop() {
   // When a new packet arrives indicated by a newline '\n' char:
   if (packetComplete) {      //If packet is valid
     //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|
-    left_wheel_cmd = calculateHardwareValues(twosComp((packet[4] << 8) | packet[3]));
-    right_wheel_cmd = calculateHardwareValues(twosComp((packet[2] << 8) | packet[1]));
+    left_wheel_cmd = calculateHardwareValues(twosComp((packet[3] << 8) | packet[2]));
+    right_wheel_cmd = calculateHardwareValues(twosComp((packet[1] << 8) | packet[0]));
 
     //      Serial.println(packet, BIN);      //DEBUG
     //
