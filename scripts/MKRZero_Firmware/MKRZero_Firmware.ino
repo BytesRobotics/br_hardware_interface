@@ -285,9 +285,7 @@ void loop() {
     
     byte PEC = outGoingPacket[0];
     for(int i=1; i<outGoingPacketLength-1;i++){PEC ^= outGoingPacket[i];}
-    outGoingPacket[outGoingPacketLength] = PEC;
-    
-//    outGoingPacket[12] = (byte)(outGoingPacket[0] ^ outGoingPacket[1] ^ outGoingPacket[2] ^ outGoingPacket[3] ^ outGoingPacket[4] ^ outGoingPacket[5] ^ outGoingPacket[6] ^ outGoingPacket[7] ^ outGoingPacket[8] ^ outGoingPacket[9] ^ outGoingPacket[10] ^ outGoingPacket[11]); //PEC byte
+    outGoingPacket[outGoingPacketLength-1] = PEC;
 
     Serial.write(outGoingPacket, outGoingPacketLength);
   }
@@ -305,14 +303,14 @@ void serialEvent() {
 
   for (int i = 0; i < packetLength; i++) {
     packet[i] = static_cast<byte>(Serial.read()); //Never ever use readBytes()
-    if (i < 4) {
+    if (i < packetLength-1) {
       pecVal = pecVal ^ packet[i]; //XOR with incomming byte
     }
     delayMicroseconds(1000); //Wait to finish adding the incomming byte to the buffer before reading it
   }
 
   //if packet is good based on PEC byte
-  if (pecVal == packet[4])
+  if (pecVal == packet[packetLength-1])
   {
     packetComplete = true;
     digitalWrite(LED_BUILTIN, HIGH);
