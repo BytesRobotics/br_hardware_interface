@@ -15,8 +15,8 @@ num_samples = 0
 def compute_matrix(average_covariance=False):
     global num_samples, max_samples, covariance_matrix, samples
     old_covariance_matrix = covariance_matrix
-    mean = np.sum(samples, axis=1) / num_samples
-    print("mean: " + str(mean))
+    mean = np.sum(samples, axis=0) / num_samples
+    # print("mean: " + str(mean))
     for sample in samples:
         for i in range(6):
             covariance_matrix[i, i] += (mean[i] - sample[i]) ** 2
@@ -83,5 +83,5 @@ if __name__ == '__main__':
         compute_matrix(True)
         continue_response = raw_input(
             "Would you like to continue and average covariance matrix from multiple points? y/n").lower()
-    print("cnt: " + str(cnt))
+    # print("cnt: " + str(cnt))
     print(covariance_matrix/cnt)

@@ -103,9 +103,9 @@ int main(int argc, char * argv[])
           navSat.altitude = connection.getAltitude();
           navSat.status.status = connection.getFixQuality();
           navSat.status.service = 1;
-          navSat.position_covariance[0] = 1.48994350e+03;
-          navSat.position_covariance[3] = 1.47253329e+04;
-          navSat.position_covariance[6] = 3.32318550e+02;
+          navSat.position_covariance[0] = 0.1;
+          navSat.position_covariance[3] = 0.1;
+          navSat.position_covariance[6] = 0.1;
           navSat.position_covariance_type = 2;
           nav_sat_pub.publish(navSat);
 
