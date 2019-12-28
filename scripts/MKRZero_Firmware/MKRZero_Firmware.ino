@@ -1,5 +1,6 @@
 // Include the Adafruit GPS library with minimum version of 1.3.0
 #include <Adafruit_GPS.h>
+#include <Servo.h>
 
 // https://tutorial.cytron.io/2015/04/05/using-mdd10a-arduino-uno/
 // https://www.amazon.com/Cytron-Dual-Channel-Motor-Driver/dp/B07CW34YRB/ref=sr_1_6?keywords=Cytron+10A+5-30V+Dual+Channel+DC+Motor+Driver&qid=1574466884&sr=8-6
@@ -50,13 +51,18 @@ volatile long right_wheel_pulses = 0;
 #define left_wheel_speed_pin 4
 int left_wheel_cmd = 0;
 #define left_wheel_dir_pin 2
+
 #define right_wheel_speed_pin 5
 int right_wheel_cmd = 0;
 #define right_wheel_dir_pin 3
 
+int head_servo_cmd = 0;
+Servo head_servo;
+#define head_servo_pin 12
+
 //For serial event
-const int packetLength = 5;         //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|
-byte packet[packetLength] = {0, 0, 0, 0, 0};   // a byte array to hold incoming data (length = 4)
+const int packetLength = 7;         //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|head servo MSB|head servo LSB|
+byte packet[packetLength] = {0, 0, 0, 0, 0, 0, 0};   // a byte array to hold incoming data (length = 6 + PEC = 7 bytes)
 boolean packetComplete = false;     // whether the string is complete
 
 //For watchdog timer
@@ -129,6 +135,9 @@ void setup() {
   pinMode(right_wheel_speed_pin, OUTPUT);
   pinMode(right_wheel_dir_pin, OUTPUT);
 
+  head_servo.attach(head_servo_pin);
+  head_servo.writeMicroseconds(1500); //Set servo to zero position
+
   //define pin functions for the distance sensors
   pinMode(trig_pin, OUTPUT);
   pinMode(front_dist_pin, INPUT);
@@ -185,9 +194,10 @@ void loop() {
 
   // When a new packet arrives indicated by a newline '\n' char:
   if (packetComplete) {      //If packet is valid
-    //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|
-    left_wheel_cmd = calculateHardwareValues(twosComp((packet[3] << 8) | packet[2]));
-    right_wheel_cmd = calculateHardwareValues(twosComp((packet[1] << 8) | packet[0]));
+    //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|head servo MSB|head servo LSB|
+    left_wheel_cmd = calculateHardwareValues(twosComp((packet[5] << 8) | packet[4]));
+    right_wheel_cmd = calculateHardwareValues(twosComp((packet[3] << 8) | packet[2]));
+    head_servo_cmd = constrain(map(twosComp((packet[1] << 8) | packet[0]), -1000, 1000, 1000, 2000), 1000, 2000);
 
     //      Serial.println(packet, BIN);      //DEBUG
     //
@@ -211,6 +221,7 @@ void loop() {
   analogWrite(left_wheel_speed_pin, abs(left_wheel_cmd));
   digitalWrite(right_wheel_dir_pin, (right_wheel_cmd > 0));
   analogWrite(right_wheel_speed_pin, abs(right_wheel_cmd));
+  head_servo.writeMicroseconds(head_servo_cmd);
   
   char c = GPS.read();
   if (GPS.newNMEAreceived()) {
