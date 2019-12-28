@@ -47,9 +47,9 @@ int main(int argc, char * argv[])
 
    ros::Rate rate(50); //50Hz
    while(ros::ok()){
-//      connection.setController(0.5,-0.5,25);
+      connection.setController(0.5,-0.1,25);
       connection.readController();
-      std::cout << std::bitset<8>(connection.getCh1()) << "\n";
+      std::cout << connection.getCh1() << "\n";
       ros::spinOnce();
       rate.sleep();
   }

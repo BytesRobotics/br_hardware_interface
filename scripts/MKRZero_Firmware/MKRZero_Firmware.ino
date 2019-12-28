@@ -32,14 +32,6 @@ Adafruit_GPS GPS(&GPSSerial);
 #define rear_dist_pin 8   //CH4
 #define bottom_dist_pin 9 //CH5
 
-//Distance = Speed * Time/2
-// speed of sound (m/s) = 331.5 + 0.60 T(°C)
-float speed_of_sound = 343.0; // will be recomputed based on temperature readings (should be in m/s)
-
-inline float to_distance(long pulse_us) {
-  return pulse_us / 2000000.0 * speed_of_sound;
-}
-
 
 // Definitions for the rotary encoder
 // https://youtu.be/V1txmR8GXzE
@@ -63,8 +55,8 @@ int right_wheel_cmd = 0;
 #define right_wheel_dir_pin 3
 
 //For serial event
-const int packetLength = 6;         //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|TEMP|
-byte packet[packetLength] = {0, 0, 0, 0, 0, 0};   // a byte array to hold incoming data (length = 4)
+const int packetLength = 5;         //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|
+byte packet[packetLength] = {0, 0, 0, 0, 0};   // a byte array to hold incoming data (length = 4)
 boolean packetComplete = false;     // whether the string is complete
 
 //For watchdog timer
@@ -176,7 +168,7 @@ void setup() {
 }
 
 void loop() {
- // Serial.println("CH1: " + String(to_distance(ch1_duty_cycle)) + " CH2: " + String(ch2_duty_cycle) + " CH3: " + String(ch3_duty_cycle) + " CH4: " + String(ch4_duty_cycle) + " CH5: " + String(ch5_duty_cycle));
+ // Serial.println("CH1: " + String(ch1_duty_cycle) + " CH2: " + String(ch2_duty_cycle) + " CH3: " + String(ch3_duty_cycle) + " CH4: " + String(ch4_duty_cycle) + " CH5: " + String(ch5_duty_cycle));
 
   now = millis();//get current time to  ensure connection to main contorller
 
@@ -193,18 +185,16 @@ void loop() {
 
   // When a new packet arrives indicated by a newline '\n' char:
   if (packetComplete) {      //If packet is valid
-    //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|TEMP|
+    //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|
     left_wheel_cmd = calculateHardwareValues(twosComp((packet[4] << 8) | packet[3]));
     right_wheel_cmd = calculateHardwareValues(twosComp((packet[2] << 8) | packet[1]));
-    // speed of sound (m/s) = 331.5 + 0.60 T(°C)
-    speed_of_sound = 331.5 + 0.60*packet[0]; //packet[0] is tempurature in celcius with byte resolution
 
     //      Serial.println(packet, BIN);      //DEBUG
     //
-    //      Serial.println(steeringVal, BIN); //DEBUG
-    //      Serial.println(steeringVal);      //DEBUG
-    //      Serial.println(throttleVal, BIN); //DEBUG
-    //      Serial.println(throttleVal);      //DEBUG
+    //      Serial.println(left_wheel_cmd, BIN); //DEBUG
+    //      Serial.println(left_wheel_cmd);      //DEBUG
+    //      Serial.println(right_wheel_cmd, BIN); //DEBUG
+    //      Serial.println(right_wheel_cmd);      //DEBUG
 
     lastPacket = millis(); //Pet the watchdog timer
     wdt_isTripped = false;
@@ -238,6 +228,7 @@ void loop() {
     // |fix|fix quality|num satelites|
     // |PEC|
     byte outGoingPacket[outGoingPacketLength];
+    //Sends channel duty cycles to topside in microseconds for later calculation of distance
     outGoingPacket[0] = (byte)(ch1_duty_cycle & 0b0000000011111111);
     outGoingPacket[1] = (byte)(ch1_duty_cycle >> 8);
     outGoingPacket[2] = (byte)(ch2_duty_cycle & 0b0000000011111111);
