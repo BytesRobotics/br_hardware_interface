@@ -151,15 +151,15 @@ namespace gb_hardware_interface
         double right_motor_cmd;
         for (int i = 0; i < num_joints_; i++) {
             if(joint_names_[i] == "left_wheel_joint"){
-                left_motor_cmd = joint_effort_command_[i];
+                left_motor_cmd = joint_velocity_command_[i];
             } else if (joint_names_[i] == "right_wheel_joint") {
-                right_motor_cmd = joint_effort_command_[i];
+                right_motor_cmd = joint_velocity_command_[i];
             }
         }
-        ROS_ERROR_STREAM(left_motor_cmd);
-        ROS_ERROR_STREAM(right_motor_cmd);
+        ROS_DEBUG_STREAM("Raw right: " << right_motor_cmd << " Raw left: " << left_motor_cmd);
         left_motor_cmd = constrain(static_cast<int>(map(left_motor_cmd, -1.0, 1.0, -1000.0, 1000.0)), -1000, 1000);
         right_motor_cmd = constrain(static_cast<int>(map(left_motor_cmd, -1.0, 1.0, -1000.0, 1000.0)), -1000, 1000);
+        ROS_DEBUG_STREAM("Processed right: " << right_motor_cmd << " Processed left: " << left_motor_cmd);
         connection.setController(right_motor_cmd,left_motor_cmd,0); //head servo currently zero
     }
 }

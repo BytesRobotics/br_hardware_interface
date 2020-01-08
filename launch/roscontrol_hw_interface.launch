@@ -1,5 +1,6 @@
 <launch>
     <rosparam file="$(find gb-hardware-interface)/config/hardware.yaml" command="load"/>
     <rosparam file="$(find gb-hardware-interface)/config/joint_limits.yaml" command="load"/>
+    <rosparam command="load" file="$(find gb-control)/config/gb_control.yaml" />
     <node name="gb_hardware_interface" pkg="gb-hardware-interface" type="gb_roscontrol_hardware_interface_node" output="screen"/>
 </launch>
