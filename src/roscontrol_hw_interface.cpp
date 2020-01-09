@@ -158,7 +158,7 @@ namespace gb_hardware_interface
         }
         ROS_DEBUG_STREAM("Raw right: " << right_motor_cmd << " Raw left: " << left_motor_cmd);
         left_motor_cmd = constrain(static_cast<int>(map(left_motor_cmd, -1.0, 1.0, -1000.0, 1000.0)), -1000, 1000);
-        right_motor_cmd = constrain(static_cast<int>(map(left_motor_cmd, -1.0, 1.0, -1000.0, 1000.0)), -1000, 1000);
+        right_motor_cmd = constrain(static_cast<int>(map(right_motor_cmd, -1.0, 1.0, -1000.0, 1000.0)), -1000, 1000);
         ROS_DEBUG_STREAM("Processed right: " << right_motor_cmd << " Processed left: " << left_motor_cmd);
         connection.setController(right_motor_cmd,left_motor_cmd,0); //head servo currently zero
     }
