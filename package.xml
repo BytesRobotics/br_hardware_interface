@@ -66,6 +66,7 @@
   <build_depend>libgflags-dev</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>rosparam_shortcuts</build_depend>
+  <build_depend>control_toolbox</build_depend>
 
   <exec_depend>hardware_interface</exec_depend>
   <exec_depend>controller_manager</exec_depend>

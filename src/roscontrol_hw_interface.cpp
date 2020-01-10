@@ -21,10 +21,52 @@ namespace gb_hardware_interface
 {
     GBHardwareInterface::GBHardwareInterface(ros::NodeHandle& nh) : nh_(nh), connection("/dev/ttyACM0", 115200){
 
+        // Setup joint state velocity stuff
         last_right_encoder_read = ros::Time::now().toSec();
         last_right_encoder_position = 0;
+        current_right_velocity = 0;
         last_left_encoder_read = ros::Time::now().toSec();
         last_left_encoder_position = 0;
+        current_left_velocity = 0;
+
+        // Setup left and right wheel PIDs
+        if (!nh_.hasParam("left_wheel_pid/p"))
+            nh_.setParam("left_wheel_pid/p", 0.3);
+        if (!nh_.hasParam("left_wheel_pid/i"))
+            nh_.setParam("left_wheel_pid/i", 5.0);
+        if (!nh_.hasParam("left_wheel_pid/d"))
+            nh_.setParam("left_wheel_pid/d", 0.001);
+        if (!nh_.hasParam("left_wheel_pid/i_clamp_min"))
+            nh_.setParam("left_wheel_pid/i_clamp_min", -5.0);
+        if (!nh_.hasParam("left_wheel_pid/i_clamp_max"))
+            nh_.setParam("left_wheel_pid/i_clamp_max", 5.0);
+        if (!nh_.hasParam("left_wheel_pid/antiwindup"))
+            nh_.setParam("left_wheel_pid/antiwindup", true);
+
+        if (!nh_.hasParam("right_wheel_pid/p"))
+            nh_.setParam("right_wheel_pid/p", 0.3);
+        if (!nh_.hasParam("right_wheel_pid/i"))
+            nh_.setParam("right_wheel_pid/i", 5.0);
+        if (!nh_.hasParam("right_wheel_pid/d"))
+            nh_.setParam("right_wheel_pid/d", 0.001);
+        if (!nh_.hasParam("right_wheel_pid/i_clamp_min"))
+            nh_.setParam("right_wheel_pid/i_clamp_min", -5.0);
+        if (!nh_.hasParam("right_wheel_pid/i_clamp_max"))
+            nh_.setParam("right_wheel_pid/i_clamp_max", 5.0);
+        if (!nh_.hasParam("right_wheel_pid/antiwindup"))
+            nh_.setParam("right_wheel_pid/antiwindup", true);
+
+        nh_.setParam("left_wheel_pid/publish_state", true);
+        nh_.setParam("right_wheel_pid/publish_state", true);
+
+        left_wheel_pid_.init(ros::NodeHandle(nh_, "left_wheel_pid"), false);
+        right_wheel_pid_.init(ros::NodeHandle(nh_, "right_wheel_pid"), false);
+
+        //https://github.com/ros-controls/control_toolbox/blob/melodic-devel/src/pid.cpp
+        //http://docs.ros.org/jade/api/control_toolbox/html/classcontrol__toolbox_1_1Pid.html
+        // Pid (double p=0.0, double i=0.0, double d=0.0, double i_max=0.0, double i_min=-0.0)
+
+        last_cmd_time_ = ros::Time::now();
 
         // Setup sensor value publishers
         front_distance_pub = nh_.advertise<std_msgs::Float64>("distance/front", 1);
@@ -47,6 +89,7 @@ namespace gb_hardware_interface
         nh_.param("/gb/hardware_interface/loop_hz", loop_hz_, 0.1);
         ros::Duration update_freq = ros::Duration(1.0/loop_hz_);
         non_realtime_loop_ = nh_.createTimer(update_freq, &GBHardwareInterface::update, this);
+
     }
 
     GBHardwareInterface::~GBHardwareInterface() {
@@ -105,17 +148,19 @@ namespace gb_hardware_interface
 
     void GBHardwareInterface::read() {
 
-        while(!connection.readController()){ROS_ERROR("Could not read hardware controller from /dev/ttyACM0");}
+        while(!connection.readController()){ROS_DEBUG("Could not read hardware controller from /dev/ttyACM0");}
 
         for (int i = 0; i < num_joints_; i++) {
             if(joint_names_[i] == "left_wheel_joint"){
                 joint_position_[i] = -1*connection.getEncoderLeft()/encoder_ticks_per_rot*2*M_PI;
-                joint_velocity_[i] = (joint_position_[i] - last_left_encoder_position)/(ros::Time::now().toSec() - last_left_encoder_read);
+                joint_velocity_[i] = ((joint_position_[i] - last_left_encoder_position)/(ros::Time::now().toSec() - last_left_encoder_read)+current_left_velocity)/2;
+                current_left_velocity = joint_velocity_[i];
                 last_left_encoder_read = ros::Time::now().toSec();
                 last_left_encoder_position = joint_position_[i];
             } else if (joint_names_[i] == "right_wheel_joint") {
                 joint_position_[i] = -1*connection.getEncoderRight()/encoder_ticks_per_rot*2*M_PI;
-                joint_velocity_[i] = (joint_position_[i] - last_right_encoder_position)/(ros::Time::now().toSec() - last_right_encoder_read);
+                joint_velocity_[i] = ((joint_position_[i] - last_right_encoder_position)/(ros::Time::now().toSec() - last_right_encoder_read)+current_right_velocity)/2;
+                current_right_velocity = joint_velocity_[i];
                 last_right_encoder_read = ros::Time::now().toSec();
                 last_right_encoder_position = joint_position_[i];
             }
@@ -167,10 +212,33 @@ namespace gb_hardware_interface
                 right_motor_cmd = joint_velocity_command_[i];
             }
         }
+
         ROS_DEBUG_STREAM("Raw right: " << right_motor_cmd << " Raw left: " << left_motor_cmd);
-        left_motor_cmd = -1.0*constrain(static_cast<int>(map(left_motor_cmd, -1.0, 1.0, -1000.0, 1000.0)), -1000, 1000);
-        right_motor_cmd = constrain(static_cast<int>(map(right_motor_cmd, -1.0, 1.0, -1000.0, 1000.0)), -1000, 1000);
+
+        //Get value from PID controllers
+        ros::Duration dt = ros::Time::now() - last_cmd_time_;
+        // left motor command
+        double error = left_motor_cmd - current_left_velocity;
+        left_motor_cmd = left_wheel_pid_.computeCommand(error, dt);
+        // right motor command
+        error = right_motor_cmd - current_right_velocity;
+        right_motor_cmd = right_wheel_pid_.computeCommand(error, dt);
+
+        ROS_DEBUG_STREAM("PID right: " << right_motor_cmd << " PID left: " << left_motor_cmd);
+
+        if(abs(right_motor_cmd)<0.05){
+            right_motor_cmd = 0;
+        }
+
+        if(abs(left_motor_cmd)<0.05){
+            left_motor_cmd = 0;
+        }
+
+        left_motor_cmd = -1.0*constrain(left_motor_cmd, -1.0, 1.0);
+        right_motor_cmd = constrain(right_motor_cmd, -1.0, 1.0);
         ROS_DEBUG_STREAM("Processed right: " << right_motor_cmd << " Processed left: " << left_motor_cmd);
         connection.setController(right_motor_cmd,left_motor_cmd,0); //head servo currently zero
+
+        last_cmd_time_ = ros::Time::now();
     }
 }

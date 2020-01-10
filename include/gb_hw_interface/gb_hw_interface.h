@@ -18,6 +18,8 @@
 #include <std_msgs/Int32.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <gb_hw_interface/gb_hw.h>
+#include <control_toolbox/pid.h>
+
 
 using namespace hardware_interface;
 using joint_limits_interface::JointLimits;
@@ -91,8 +93,16 @@ namespace gb_hardware_interface
         // For calculating joint velocity
         double last_right_encoder_read;
         double last_right_encoder_position;
+        double current_right_velocity; // The velocity of the joint
         double last_left_encoder_read;
         double last_left_encoder_position;
+        double current_left_velocity; // The velocity of the joint
+
+        // For left and right wheel PIDs
+        ros::NodeHandle nhp_;
+        ros::Time last_cmd_time_;
+        control_toolbox::Pid right_wheel_pid_;
+        control_toolbox::Pid left_wheel_pid_;
 
     };
 
