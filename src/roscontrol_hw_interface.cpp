@@ -21,6 +21,11 @@ namespace gb_hardware_interface
 {
     GBHardwareInterface::GBHardwareInterface(ros::NodeHandle& nh) : nh_(nh), connection("/dev/ttyACM0", 115200){
 
+        last_right_encoder_read = ros::Time::now().toSec();
+        last_right_encoder_position = 0;
+        last_left_encoder_read = ros::Time::now().toSec();
+        last_left_encoder_position = 0;
+
         // Setup sensor value publishers
         front_distance_pub = nh_.advertise<std_msgs::Float64>("distance/front", 1);
         rear_distance_pub = nh_.advertise<std_msgs::Float64>("distance/rear", 1);
@@ -105,8 +110,14 @@ namespace gb_hardware_interface
         for (int i = 0; i < num_joints_; i++) {
             if(joint_names_[i] == "left_wheel_joint"){
                 joint_position_[i] = -1*connection.getEncoderLeft()/encoder_ticks_per_rot*2*M_PI;
+                joint_velocity_[i] = (joint_position_[i] - last_left_encoder_position)/(ros::Time::now().toSec() - last_left_encoder_read);
+                last_left_encoder_read = ros::Time::now().toSec();
+                last_left_encoder_position = joint_position_[i];
             } else if (joint_names_[i] == "right_wheel_joint") {
                 joint_position_[i] = -1*connection.getEncoderRight()/encoder_ticks_per_rot*2*M_PI;
+                joint_velocity_[i] = (joint_position_[i] - last_right_encoder_position)/(ros::Time::now().toSec() - last_right_encoder_read);
+                last_right_encoder_read = ros::Time::now().toSec();
+                last_right_encoder_position = joint_position_[i];
             }
         }
 

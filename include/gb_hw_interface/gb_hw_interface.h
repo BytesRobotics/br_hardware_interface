@@ -88,6 +88,12 @@ namespace gb_hardware_interface
         double speed_of_sound; // will be recomputed based on temperature readings (should be in m/s)
         double encoder_ticks_per_rot;
 
+        // For calculating joint velocity
+        double last_right_encoder_read;
+        double last_right_encoder_position;
+        double last_left_encoder_read;
+        double last_left_encoder_position;
+
     };
 
 }
