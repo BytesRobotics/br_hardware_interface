@@ -17,6 +17,7 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Int32.h>
 #include <sensor_msgs/NavSatFix.h>
+#include <sensor_msgs/Range.h>
 #include <gb_hw_interface/gb_hw.h>
 #include <control_toolbox/pid.h>
 
