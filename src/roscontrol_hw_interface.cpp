@@ -195,7 +195,7 @@ namespace gb_hardware_interface
         navSat.latitude = connection.getLatitude();
         navSat.longitude = connection.getLongitude();
         navSat.altitude = connection.getAltitude();
-        navSat.status.status = connection.getFixQuality();
+        navSat.status.status = connection.getFixQuality() - 1;
         navSat.status.service = 1;
         navSat.position_covariance[0] = 0.1;
         navSat.position_covariance[3] = 0.1;
