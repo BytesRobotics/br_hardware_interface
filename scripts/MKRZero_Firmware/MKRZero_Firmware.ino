@@ -161,6 +161,10 @@ void setup() {
   //Start GPS unit
   // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
   GPS.begin(9600);
+  GPS.sendCommand("$PMTK251,19200*22"); //Set the GPS baud rate to 19200
+  GPSSerial.end();
+  GPS.begin(19200);
+  
   // Turn on RMC (recommended minimum) and GGA (fix data) including altitude
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   // Set the update rate
