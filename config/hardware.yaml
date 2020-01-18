@@ -1,0 +1,8 @@
+gb:
+ hardware_interface:
+  loop_hz: 75 # hz
+  speed_of_sound: 343.0
+  encoder_ticks_per_rot: 973
+  joints:
+   - right_wheel_joint
+   - left_wheel_joint

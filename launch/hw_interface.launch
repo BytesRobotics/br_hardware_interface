@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="gb-hardware-interface" type="gb_hardware_interface_node" name="hardware_interface" output="screen"/>
+</launch>

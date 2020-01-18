@@ -8,9 +8,21 @@ project(gb-hardware-interface)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  std_msgs
-  sensor_msgs
-  roscpp
+    cmake_modules
+    hardware_interface
+    controller_manager
+    roscpp
+    control_msgs
+    trajectory_msgs
+    actionlib
+    urdf
+    joint_limits_interface
+    transmission_interface
+    control_toolbox
+    std_msgs
+    sensor_msgs
+    rosparam_shortcuts
+    control_toolbox
 )
 
 ## System dependencies are found with CMake's conventions
@@ -105,7 +117,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES gb-hardware-interface
-#  CATKIN_DEPENDS control_messages roscpp
+  CATKIN_DEPENDS roscpp hardware_interface
 #  DEPENDS system_lib
 )
 
@@ -135,6 +147,9 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
  add_executable(gb_hardware_interface_node src/hw_interface.cpp src/serial.cpp src/unix.cpp src/arduino_com.cpp)
 
+ add_executable(gb_roscontrol_hardware_interface_node src/roscontrol_hw_interface_node.cpp src/roscontrol_hw_interface.cpp src/serial.cpp src/unix.cpp src/arduino_com.cpp)
+
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -144,9 +159,15 @@ include_directories(
 ## Add cmake target dependencies of the executable
 ## same as for the library above
  add_dependencies(gb_hardware_interface_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+ add_dependencies(gb_roscontrol_hardware_interface_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(gb_hardware_interface_node
+   ${catkin_LIBRARIES}
+ )
+
+ target_link_libraries(gb_roscontrol_hardware_interface_node
    ${catkin_LIBRARIES}
  )
 
