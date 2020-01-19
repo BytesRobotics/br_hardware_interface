@@ -105,6 +105,10 @@ namespace gb_hardware_interface
         control_toolbox::Pid right_wheel_pid_;
         control_toolbox::Pid left_wheel_pid_;
 
+        // For checking change in GPS data
+        float last_latitude;
+        float last_longitude;
+
     };
 
 }

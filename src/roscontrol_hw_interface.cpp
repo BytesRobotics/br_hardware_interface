@@ -79,6 +79,8 @@ namespace gb_hardware_interface
         nav_sat_speed_pub = nh_.advertise<std_msgs::Float64>("gps/speed", 1);
         nav_sat_angle_pub = nh_.advertise<std_msgs::Float64>("gps/angle", 1);
         nav_sat_satellites_pub = nh_.advertise<std_msgs::Int32>("gps/satellites", 1);
+        last_latitude = 0;
+        last_longitude = 0;
 
         nh_.param("/gb/hardware_interface/speed_of_sound", speed_of_sound, 343.0);
         nh_.param("/gb/hardware_interface/encoder_ticks_per_rot", encoder_ticks_per_rot, 374.0);
@@ -195,13 +197,19 @@ namespace gb_hardware_interface
         navSat.latitude = connection.getLatitude();
         navSat.longitude = connection.getLongitude();
         navSat.altitude = connection.getAltitude();
-        navSat.status.status = connection.getFixQuality() - 1;
-        navSat.status.service = 1;
-        navSat.position_covariance[0] = 0.1;
-        navSat.position_covariance[3] = 0.1;
-        navSat.position_covariance[6] = 0.1;
-        navSat.position_covariance_type = 2;
-        nav_sat_pub.publish(navSat);
+
+        //sanity check on data and limit pub rate first checking validity then change
+        if(navSat.latitude != 0 && navSat.longitude != 0 && (navSat.latitude != last_latitude || navSat.longitude != last_longitude)){
+            navSat.status.status = connection.getFixQuality() - 1;
+            navSat.status.service = 1;
+            navSat.position_covariance[0] = 25.0;
+            navSat.position_covariance[3] = 25.0;
+            navSat.position_covariance[6] = 25.0;
+            navSat.position_covariance_type = 2;
+            nav_sat_pub.publish(navSat);
+            last_longitude = navSat.longitude;
+            last_latitude = navSat.latitude;
+        }
 
         std_msgs::Int32 num_satellites;
         num_satellites.data = connection.getNumSatellites();
