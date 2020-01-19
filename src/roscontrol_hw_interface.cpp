@@ -190,11 +190,12 @@ namespace gb_hardware_interface
         bottom_distance_pub.publish(dist);
 
         sensor_msgs::NavSatFix navSat;
-        navSat.header.stamp = ros::Time::now();;
+        navSat.header.stamp = ros::Time::now();
+        navSat.header.frame_id = "gps_link";
         navSat.latitude = connection.getLatitude();
         navSat.longitude = connection.getLongitude();
         navSat.altitude = connection.getAltitude();
-        navSat.status.status = connection.getFixQuality();
+        navSat.status.status = connection.getFixQuality() - 1;
         navSat.status.service = 1;
         navSat.position_covariance[0] = 0.1;
         navSat.position_covariance[3] = 0.1;
