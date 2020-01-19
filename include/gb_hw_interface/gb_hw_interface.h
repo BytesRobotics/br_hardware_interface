@@ -108,6 +108,7 @@ namespace gb_hardware_interface
         // For checking change in GPS data
         float last_latitude;
         float last_longitude;
+        float last_altitude;
 
     };
 
