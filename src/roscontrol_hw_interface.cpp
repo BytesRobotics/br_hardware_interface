@@ -22,6 +22,7 @@ namespace gb_hardware_interface
     GBHardwareInterface::GBHardwareInterface(ros::NodeHandle& nh) : nh_(nh), connection("/dev/ttyACM0", 115200){
 
         // Setup joint state velocity stuff
+        is_first_pass = true; //after all state variables are set control loop begins
         last_right_encoder_read = ros::Time::now().toSec();
         last_right_encoder_position = 0;
         current_right_velocity = 0;
@@ -153,16 +154,29 @@ namespace gb_hardware_interface
 
         while(!connection.readController()){ROS_DEBUG("Could not read hardware controller from /dev/ttyACM0");}
 
+        float encoder_position = 0;
         for (int i = 0; i < num_joints_; i++) {
             if(joint_names_[i] == "left_wheel_joint"){
-                joint_position_[i] = -1*connection.getEncoderLeft()/encoder_ticks_per_rot*2*M_PI;
-                joint_velocity_[i] = ((joint_position_[i] - last_left_encoder_position)/(ros::Time::now().toSec() - last_left_encoder_read)+current_left_velocity)/2;
+                encoder_position = -1*connection.getEncoderLeft()/encoder_ticks_per_rot*2*M_PI;
+                //sanity check to eliminate rogue values
+                if(encoder_position - last_left_encoder_position < 10){
+                    joint_position_[i] = encoder_position;
+                } else {
+                    joint_position_[i] = last_left_encoder_position;
+                }
+                joint_velocity_[i] = (joint_position_[i] - last_left_encoder_position)/(ros::Time::now().toSec() - last_left_encoder_read);
                 current_left_velocity = joint_velocity_[i];
                 last_left_encoder_read = ros::Time::now().toSec();
                 last_left_encoder_position = joint_position_[i];
             } else if (joint_names_[i] == "right_wheel_joint") {
-                joint_position_[i] = -1*connection.getEncoderRight()/encoder_ticks_per_rot*2*M_PI;
-                joint_velocity_[i] = ((joint_position_[i] - last_right_encoder_position)/(ros::Time::now().toSec() - last_right_encoder_read)+current_right_velocity)/2;
+                encoder_position = -1*connection.getEncoderRight()/encoder_ticks_per_rot*2*M_PI;
+                //sanity check to eliminate rogue values
+                if(encoder_position - last_left_encoder_position < 10){
+                    joint_position_[i] = encoder_position;
+                } else {
+                    joint_position_[i] = last_right_encoder_position;
+                }
+                joint_velocity_[i] = (joint_position_[i] - last_right_encoder_position)/(ros::Time::now().toSec() - last_right_encoder_read);
                 current_right_velocity = joint_velocity_[i];
                 last_right_encoder_read = ros::Time::now().toSec();
                 last_right_encoder_position = joint_position_[i];
@@ -229,7 +243,9 @@ namespace gb_hardware_interface
     }
 
     void GBHardwareInterface::write(ros::Duration elapsed_time) {
+
         velocity_joint_limits_interface_.enforceLimits(elapsed_time);
+
         double left_motor_cmd;
         double right_motor_cmd;
         for (int i = 0; i < num_joints_; i++) {
@@ -264,7 +280,11 @@ namespace gb_hardware_interface
         left_motor_cmd = -1.0*constrain(left_motor_cmd, -1.0, 1.0);
         right_motor_cmd = constrain(right_motor_cmd, -1.0, 1.0);
         ROS_DEBUG_STREAM("Processed right: " << right_motor_cmd << " Processed left: " << left_motor_cmd);
-        connection.setController(right_motor_cmd,left_motor_cmd,0); //head servo currently zero
+
+        if(!is_first_pass) {
+            connection.setController(right_motor_cmd, left_motor_cmd, 0); //head servo currently zero
+        }
+        is_first_pass = false;
 
         last_cmd_time_ = ros::Time::now();
     }
