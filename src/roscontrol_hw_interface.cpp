@@ -32,7 +32,7 @@ namespace gb_hardware_interface
 
         // Setup left and right wheel PIDs
         if (!nh_.hasParam("left_wheel_pid/p"))
-            nh_.setParam("left_wheel_pid/p", 0.25);
+            nh_.setParam("left_wheel_pid/p", 0.15);
         if (!nh_.hasParam("left_wheel_pid/i"))
             nh_.setParam("left_wheel_pid/i", 4.5);
         if (!nh_.hasParam("left_wheel_pid/d"))
@@ -45,7 +45,7 @@ namespace gb_hardware_interface
             nh_.setParam("left_wheel_pid/antiwindup", true);
 
         if (!nh_.hasParam("right_wheel_pid/p"))
-            nh_.setParam("right_wheel_pid/p", 0.25);
+            nh_.setParam("right_wheel_pid/p", 0.15);
         if (!nh_.hasParam("right_wheel_pid/i"))
             nh_.setParam("right_wheel_pid/i", 4.5);
         if (!nh_.hasParam("right_wheel_pid/d"))
@@ -159,7 +159,7 @@ namespace gb_hardware_interface
             if(joint_names_[i] == "left_wheel_joint"){
                 encoder_position = -1*connection.getEncoderLeft()/encoder_ticks_per_rot*2*M_PI;
                 //sanity check to eliminate rogue values
-                if(abs(encoder_position - last_left_encoder_position) < 10){
+                if(abs(encoder_position - last_left_encoder_position) < 10 || is_first_pass){
                     joint_position_[i] = encoder_position;
                 } else {
                     joint_position_[i] = last_left_encoder_position;
@@ -167,11 +167,11 @@ namespace gb_hardware_interface
                 joint_velocity_[i] = (joint_position_[i] - last_left_encoder_position)/(ros::Time::now().toSec() - last_left_encoder_read);
                 current_left_velocity = joint_velocity_[i];
                 last_left_encoder_read = ros::Time::now().toSec();
-                last_left_encoder_position = encoder_position;
+                last_left_encoder_position = joint_position_[i];
             } else if (joint_names_[i] == "right_wheel_joint") {
                 encoder_position = -1*connection.getEncoderRight()/encoder_ticks_per_rot*2*M_PI;
                 //sanity check to eliminate rogue values
-                if(abs(encoder_position - last_right_encoder_position) < 10){
+                if(abs(encoder_position - last_right_encoder_position) < 10  || is_first_pass){
                     joint_position_[i] = encoder_position;
                 } else {
                     joint_position_[i] = last_right_encoder_position;
@@ -179,7 +179,7 @@ namespace gb_hardware_interface
                 joint_velocity_[i] = (joint_position_[i] - last_right_encoder_position)/(ros::Time::now().toSec() - last_right_encoder_read);
                 current_right_velocity = joint_velocity_[i];
                 last_right_encoder_read = ros::Time::now().toSec();
-                last_right_encoder_position = encoder_position;
+                last_right_encoder_position = joint_position_[i];
             }
         }
 
