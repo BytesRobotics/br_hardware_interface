@@ -94,9 +94,11 @@ namespace gb_hardware_interface
         // For calculating joint velocity
         double last_right_encoder_read;
         double last_right_encoder_position;
+        double right_encoder_zero;
         double current_right_velocity; // The velocity of the joint
         double last_left_encoder_read;
         double last_left_encoder_position;
+        double left_encoder_zero;
         double current_left_velocity; // The velocity of the joint
 
         // For left and right wheel PIDs

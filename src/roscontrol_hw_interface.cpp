@@ -76,7 +76,7 @@ namespace gb_hardware_interface
         left_distance_pub = nh_.advertise<sensor_msgs::Range>("distance/left", 1);
         bottom_distance_pub = nh_.advertise<sensor_msgs::Range>("distance/bottom", 1);
 
-        nav_sat_pub = nh_.advertise<sensor_msgs::NavSatFix>("gps", 1);
+        nav_sat_pub = nh_.advertise<sensor_msgs::NavSatFix>("gps", 1, true); //GPS messages latch
         nav_sat_speed_pub = nh_.advertise<std_msgs::Float64>("gps/speed", 1);
         nav_sat_angle_pub = nh_.advertise<std_msgs::Float64>("gps/angle", 1);
         nav_sat_satellites_pub = nh_.advertise<std_msgs::Int32>("gps/satellites", 1);
@@ -158,9 +158,10 @@ namespace gb_hardware_interface
         for (int i = 0; i < num_joints_; i++) {
             if(joint_names_[i] == "left_wheel_joint"){
                 encoder_position = -1*connection.getEncoderLeft()/encoder_ticks_per_rot*2*M_PI;
+                if(is_first_pass){left_encoder_zero = encoder_position;}
                 //sanity check to eliminate rogue values
                 if(abs(encoder_position - last_left_encoder_position) < 10 || is_first_pass){
-                    joint_position_[i] = encoder_position;
+                    joint_position_[i] = encoder_position-left_encoder_zero;
                 } else {
                     joint_position_[i] = last_left_encoder_position;
                 }
@@ -170,9 +171,10 @@ namespace gb_hardware_interface
                 last_left_encoder_position = joint_position_[i];
             } else if (joint_names_[i] == "right_wheel_joint") {
                 encoder_position = -1*connection.getEncoderRight()/encoder_ticks_per_rot*2*M_PI;
+                if(is_first_pass){right_encoder_zero = encoder_position;}
                 //sanity check to eliminate rogue values
                 if(abs(encoder_position - last_right_encoder_position) < 10  || is_first_pass){
-                    joint_position_[i] = encoder_position;
+                    joint_position_[i] = encoder_position-right_encoder_zero;
                 } else {
                     joint_position_[i] = last_right_encoder_position;
                 }
@@ -214,21 +216,21 @@ namespace gb_hardware_interface
         navSat.altitude = connection.getAltitude();
         navSat.status.status = connection.getFixQuality() - 1;
         navSat.status.service = 1;
-        navSat.position_covariance[0] = 25.0;
-        navSat.position_covariance[3] = 25.0;
-        navSat.position_covariance[6] = 25.0;
+
+        float hdop = connection.getHdop();
+        ROS_DEBUG_STREAM("HDOP: " << hdop); // print the horizontal dilution of precision for debug
+
+        // use DOP for variance calculations
+        navSat.position_covariance[0] = 10.0*hdop;
+        navSat.position_covariance[3] = 10.0*hdop;
+        navSat.position_covariance[6] = 50.0;
         navSat.position_covariance_type = 2;
 
         //sanity check on data and limit pub rate first checking validity then change
-        if(navSat.latitude != 0 && navSat.longitude != 0){
-            nav_sat_pub.publish(navSat);
+        if(navSat.longitude != last_longitude || navSat.latitude != last_latitude || navSat.altitude != last_altitude){
             last_longitude = navSat.longitude;
             last_latitude = navSat.latitude;
             last_altitude = navSat.altitude;
-        } else if(last_latitude != 0 && last_longitude != 0){
-            navSat.latitude = last_latitude;
-            navSat.longitude = last_longitude;
-            navSat.altitude = last_altitude;
             nav_sat_pub.publish(navSat);
         }
 

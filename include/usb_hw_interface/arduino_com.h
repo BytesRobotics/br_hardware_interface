@@ -29,11 +29,12 @@ class HardwareCom
     // |encoder_right LSB|encoder_right|encoder_right|encoder_right MSB|
     // |lat LSB|lat|lat|lat MSB|
     // |lon LSB|lon|lon|lon MSB|
+    // |hdop LSB|hdop|hdop|hdop MSB|
     // |speed LSB|speed MSB|angle LSB|angle MSB|altitude LSB|altitude MSB|
     // |fix|fix quality|num satellites|
     // |PEC|
-  const int incomingPacketLength = 36;
-  uint8_t incomingPacket[36]; //Packet from the zero (length = 12 + PEC)
+  const int incomingPacketLength = 40;
+  uint8_t incomingPacket[40]; //Packet from the zero (length = 12 + PEC)
   int channels[5] = {}; //Values from CH1 to Ch5 for distance sensors
   //  front_dist_pin  CH1
   //  left_dist_pin   CH2
@@ -42,7 +43,7 @@ class HardwareCom
   //  bottom_dist_pin CH5
 
   long encoderLeft, encoderRight;
-  FLOATUNION_t latitude, longitude;
+  FLOATUNION_t latitude, longitude, hdop;
   float speed, angle, altitude; //ground speed, angle from north, and altitude from sea level
   int fix, fix_quality, satellites;
 
@@ -61,6 +62,7 @@ public:
   long getEncoderRight();
   float getLatitude();
   float getLongitude();
+  float getHdop(); //horizontal dilution of precision
   float getSpeed();
   float getAngle();
   float getAltitude();
