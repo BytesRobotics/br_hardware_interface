@@ -100,10 +100,16 @@ namespace gb_hardware_interface
         double current_left_velocity; // The velocity of the joint
 
         // For left and right wheel PIDs
+        bool is_first_pass; //first pass sets state variables to prevent oscillation at start
         ros::NodeHandle nhp_;
         ros::Time last_cmd_time_;
         control_toolbox::Pid right_wheel_pid_;
         control_toolbox::Pid left_wheel_pid_;
+
+        // For checking change in GPS data
+        float last_latitude;
+        float last_longitude;
+        float last_altitude;
 
     };
 

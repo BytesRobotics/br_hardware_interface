@@ -21,7 +21,6 @@ find_package(catkin REQUIRED COMPONENTS
     control_toolbox
     std_msgs
     sensor_msgs
-    rosparam_shortcuts
     control_toolbox
 )
 
