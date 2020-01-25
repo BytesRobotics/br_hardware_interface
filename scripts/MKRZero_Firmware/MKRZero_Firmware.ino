@@ -73,12 +73,13 @@ boolean wdt_isTripped = false; //so  the timer is not tripped continuously
 //For sending packet
 unsigned long lastSend = 0;
 unsigned long sendPeriod = 20000; //in microsoconds (1/Hz*1000000)
-const int outGoingPacketLength = 36; 
+const int outGoingPacketLength = 40; 
 //Outgoing packet structure: |ch1 LSB|ch1 MSB|ch2 LSB|ch2 MSB|ch3 LSB|ch3 MSB|ch4 LSB|ch4 MSB|ch5 LSB|ch5 MSB|  
 // |encoder_left LSB|encoder_left|encoder_left|encoder_left MSB|  
 // |encoder_right LSB|encoder_right|encoder_right|encoder_right MSB|  
 // |lat LSB|lat|lat|lat MSB| 
 // |lon LSB|lon|lon|lon MSB| 
+// |HDOP LSB|HDOP|HDOP|HDOP MSB|
 // |speed LSB|speed MSB|angle LSB|angle MSB|altitude LSB|altitude MSB|
 // |fix|fix quality|num satelites|
 // |PEC|
@@ -165,15 +166,17 @@ void setup() {
   GPSSerial.flush();
   GPSSerial.end();
   GPS.begin(19200);
-  
-  // Turn on RMC (recommended minimum) and GGA (fix data) including altitude
+
+  // http://aprs.gids.nl/nmea/
+  // Turn on RMC (recommended minimum) and GGA (fix data including HDOP) including altitude
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   // Set the update rate
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ); // 10 Hz update rate
-  // Request updates on antenna status
-  // GPS.sendCommand(PGCMD_ANTENNA);
-  // Ask for firmware version
-  GPSSerial.println(PMTK_Q_RELEASE);
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ); // 5 Hz update rate (this is only the echo rate)
+  GPS.sendCommand(PMTK_API_SET_FIX_CTL_1HZ); // Fix at 1Hz to work with SBAS and Easy Mode (see PMTK datasheet for more info)
+
+  // Enable all GPS correction data types SBAS and WAAS
+  GPS.sendCommand(PMTK_ENABLE_SBAS);
+  GPS.sendCommand(PMTK_ENABLE_WAAS);
 
   while (!Serial); //Wait to connect to computer
 
@@ -268,27 +271,35 @@ void loop() {
     latitude.number = GPS.latitudeDegrees;
     FLOATUNION_t longitude;
     longitude.number = GPS.longitudeDegrees;
+    FLOATUNION_t hdop; //horizontal dilution of precision for variance calculation and debugging
+    hdop.number = GPS.HDOP;
     
     outGoingPacket[18] = (byte)(latitude.bytes[0]);
     outGoingPacket[19] = (byte)(latitude.bytes[1]);
     outGoingPacket[20] = (byte)(latitude.bytes[2]);
     outGoingPacket[21] = (byte)(latitude.bytes[3]);
+    
     outGoingPacket[22] = (byte)(longitude.bytes[0]);
     outGoingPacket[23] = (byte)(longitude.bytes[1]);
     outGoingPacket[24] = (byte)(longitude.bytes[2]);
     outGoingPacket[25] = (byte)(longitude.bytes[3]);
 
+    outGoingPacket[26] = (byte)(hdop.bytes[0]);
+    outGoingPacket[27] = (byte)(hdop.bytes[1]);
+    outGoingPacket[28] = (byte)(hdop.bytes[2]);
+    outGoingPacket[29] = (byte)(hdop.bytes[3]);
+
     //multiply speed by 100 to retain two decimal precision when moved to jetson
-    outGoingPacket[26] = (byte)((int)(GPS.speed*100) & 0b0000000011111111);
-    outGoingPacket[27] = (byte)((int)(GPS.speed*100) >> 8);
-    outGoingPacket[28] = (byte)((int)(GPS.angle*100) & 0b0000000011111111);
-    outGoingPacket[29] = (byte)((int)(GPS.angle*100) >> 8);
-    outGoingPacket[30] = (byte)((int)(GPS.altitude*100) & 0b0000000011111111);
-    outGoingPacket[31] = (byte)((int)(GPS.altitude*100) >> 8);
+    outGoingPacket[30] = (byte)((int)(GPS.speed*100) & 0b0000000011111111);
+    outGoingPacket[31] = (byte)((int)(GPS.speed*100) >> 8);
+    outGoingPacket[32] = (byte)((int)(GPS.angle*100) & 0b0000000011111111);
+    outGoingPacket[33] = (byte)((int)(GPS.angle*100) >> 8);
+    outGoingPacket[34] = (byte)((int)(GPS.altitude*100) & 0b0000000011111111);
+    outGoingPacket[35] = (byte)((int)(GPS.altitude*100) >> 8);
     
-    outGoingPacket[32] = (byte)(GPS.fix);
-    outGoingPacket[33] = (byte)(GPS.fixquality);
-    outGoingPacket[34] = (byte)(GPS.satellites);
+    outGoingPacket[36] = (byte)(GPS.fix);
+    outGoingPacket[37] = (byte)(GPS.fixquality);
+    outGoingPacket[38] = (byte)(GPS.satellites);
     
     byte PEC = outGoingPacket[0];
     for(int i=1; i<outGoingPacketLength-1;i++){PEC ^= outGoingPacket[i];}
