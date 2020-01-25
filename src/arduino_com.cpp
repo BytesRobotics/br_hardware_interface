@@ -111,13 +111,18 @@ bool HardwareCom::readController(){
             longitude.bytes[2] = incomingPacket[24];
             longitude.bytes[3] = incomingPacket[25];
 
-            speed = static_cast<int>(incomingPacket[26] | (incomingPacket[27]<<8))/100.0;
-            angle = static_cast<int>(incomingPacket[28] | (incomingPacket[29]<<8))/100.0;
-            altitude = static_cast<int>(incomingPacket[30] | (incomingPacket[31]<<8))/100.0;
+            hdop.bytes[0] = incomingPacket[26];
+            hdop.bytes[1] = incomingPacket[27];
+            hdop.bytes[2] = incomingPacket[28];
+            hdop.bytes[3] = incomingPacket[29];
 
-            fix = static_cast<int>(incomingPacket[32]);
-            fix_quality = static_cast<int>(incomingPacket[33]);
-            satellites = static_cast<int>(incomingPacket[34]);
+            speed = static_cast<int>(incomingPacket[30] | (incomingPacket[31]<<8))/100.0;
+            angle = static_cast<int>(incomingPacket[32] | (incomingPacket[33]<<8))/100.0;
+            altitude = static_cast<int>(incomingPacket[34] | (incomingPacket[35]<<8))/100.0;
+
+            fix = static_cast<int>(incomingPacket[36]);
+            fix_quality = static_cast<int>(incomingPacket[37]);
+            satellites = static_cast<int>(incomingPacket[38]);
 
             return true;
         } //check PEC byte
@@ -161,6 +166,11 @@ float HardwareCom::getLatitude(){
 float HardwareCom::getLongitude(){
     return longitude.number;
 }
+
+float HardwareCom::getHdop(){
+    return hdop.number;
+}
+
 
 float HardwareCom::getSpeed(){
     return speed;
