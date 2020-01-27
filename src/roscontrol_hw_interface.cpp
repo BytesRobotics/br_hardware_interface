@@ -157,10 +157,11 @@ namespace gb_hardware_interface
         float encoder_position = 0;
         for (int i = 0; i < num_joints_; i++) {
             if(joint_names_[i] == "left_wheel_joint"){
-                encoder_position = -1*connection.getEncoderLeft()/encoder_ticks_per_rot*2*M_PI;
+                encoder_position = connection.getEncoderLeft()/encoder_ticks_per_rot*2*M_PI;
+                ROS_DEBUG_STREAM("left encoder value: " << encoder_position);
                 if(is_first_pass){left_encoder_zero = encoder_position;}
                 //sanity check to eliminate rogue values
-                if(abs(encoder_position - last_left_encoder_position) < 10 || is_first_pass){
+                if(abs(encoder_position - left_encoder_zero - last_left_encoder_position) < 10 || is_first_pass){
                     joint_position_[i] = encoder_position-left_encoder_zero;
                 } else {
                     joint_position_[i] = last_left_encoder_position;
@@ -171,9 +172,10 @@ namespace gb_hardware_interface
                 last_left_encoder_position = joint_position_[i];
             } else if (joint_names_[i] == "right_wheel_joint") {
                 encoder_position = -1*connection.getEncoderRight()/encoder_ticks_per_rot*2*M_PI;
+                ROS_DEBUG_STREAM("right encoder value: " << encoder_position);
                 if(is_first_pass){right_encoder_zero = encoder_position;}
                 //sanity check to eliminate rogue values
-                if(abs(encoder_position - last_right_encoder_position) < 10  || is_first_pass){
+                if(abs(encoder_position - right_encoder_zero - last_right_encoder_position) < 10  || is_first_pass){
                     joint_position_[i] = encoder_position-right_encoder_zero;
                 } else {
                     joint_position_[i] = last_right_encoder_position;
