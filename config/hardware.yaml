@@ -6,3 +6,4 @@ gb:
   joints:
    - right_wheel_joint
    - left_wheel_joint
+   - head_joint

@@ -91,6 +91,12 @@ namespace gb_hardware_interface
         double speed_of_sound; // will be recomputed based on temperature readings (should be in m/s)
         double encoder_ticks_per_rot;
 
+        // Values for the head
+        double head_position; //Since the head does not have feedback we simply provide the command after being processed
+        double head_max_pose; //maximum position value for the head motion
+        double head_min_pose; //minimum position value for the head motion
+        double head_zero_pose; //zero position for the head (ie when cmd is zero)
+
         // For calculating joint velocity
         double last_right_encoder_read;
         double last_right_encoder_position;

@@ -63,6 +63,12 @@ namespace gb_hardware_interface
         left_wheel_pid_.init(ros::NodeHandle(nh_, "left_wheel_pid"), false);
         right_wheel_pid_.init(ros::NodeHandle(nh_, "right_wheel_pid"), false);
 
+        // Set the max and min parameters for the head servo
+        ros::param::param<double>("~head_max_pose", head_max_pose, 0.8);
+        ros::param::param<double>("~head_min_pose", head_min_pose,-0.8);
+        ros::param::param<double>("~head_zero_pose", head_zero_pose, 0.0);
+        head_position = 0;
+
         //https://github.com/ros-controls/control_toolbox/blob/melodic-devel/src/pid.cpp
         //http://docs.ros.org/jade/api/control_toolbox/html/classcontrol__toolbox_1_1Pid.html
         // Pid (double p=0.0, double i=0.0, double d=0.0, double i_max=0.0, double i_min=-0.0)
@@ -123,6 +129,10 @@ namespace gb_hardware_interface
             JointStateHandle jointStateHandle(joint_names_[i], &joint_position_[i], &joint_velocity_[i], &joint_effort_[i]);
             joint_state_interface_.registerHandle(jointStateHandle);
 
+            // Create position joint interface
+            JointHandle jointPositionHandle(jointStateHandle, &joint_position_command_[i]);
+            position_joint_interface_.registerHandle(jointPositionHandle);
+
             // Create velocity joint interface
             JointHandle jointVelocityHandle(jointStateHandle, &joint_velocity_command_[i]);
             JointLimits limits;
@@ -138,9 +148,10 @@ namespace gb_hardware_interface
         }
 
         registerInterface(&joint_state_interface_);
+        registerInterface(&position_joint_interface_);
         registerInterface(&velocity_joint_interface_);
         registerInterface(&effort_joint_interface_);
-        registerInterface(&velocity_joint_limits_interface_);
+//        registerInterface(&velocity_joint_limits_interface_);
     }
 
     void GBHardwareInterface::update(const ros::TimerEvent& e) {
@@ -184,6 +195,8 @@ namespace gb_hardware_interface
                 current_right_velocity = joint_velocity_[i];
                 last_right_encoder_read = ros::Time::now().toSec();
                 last_right_encoder_position = joint_position_[i];
+            } else if (joint_names_[i] == "head_joint") {
+                joint_position_[i] = head_position;
             }
         }
 
@@ -252,11 +265,14 @@ namespace gb_hardware_interface
 
         double left_motor_cmd;
         double right_motor_cmd;
+        double head_motor_cmd;
         for (int i = 0; i < num_joints_; i++) {
             if(joint_names_[i] == "left_wheel_joint"){
                 left_motor_cmd = joint_velocity_command_[i];
             } else if (joint_names_[i] == "right_wheel_joint") {
                 right_motor_cmd = joint_velocity_command_[i];
+            } else if (joint_names_[i] == "head_joint") {
+                head_motor_cmd = joint_position_command_[i];
             }
         }
 
@@ -271,7 +287,7 @@ namespace gb_hardware_interface
         error = right_motor_cmd - current_right_velocity;
         right_motor_cmd = right_wheel_pid_.computeCommand(error, dt);
 
-        ROS_DEBUG_STREAM("PID right: " << right_motor_cmd << " PID left: " << left_motor_cmd);
+        ROS_DEBUG_STREAM("PID right: " << right_motor_cmd << " PID left: " << left_motor_cmd << " Head cmd: " << head_motor_cmd);
 
         if(abs(right_motor_cmd)<0.05){
             right_motor_cmd = 0;
@@ -283,10 +299,15 @@ namespace gb_hardware_interface
 
         left_motor_cmd = -1.0*constrain(left_motor_cmd, -1.0, 1.0);
         right_motor_cmd = constrain(right_motor_cmd, -1.0, 1.0);
-        ROS_DEBUG_STREAM("Processed right: " << right_motor_cmd << " Processed left: " << left_motor_cmd);
+
+        head_position = constrain(head_motor_cmd, head_min_pose, head_max_pose); // kept in defined coordinate space + radians
+        head_motor_cmd = constrain(head_motor_cmd + head_zero_pose, head_min_pose, head_max_pose); // constrain with zero position for servo
+        head_motor_cmd = map(head_motor_cmd, -1.5708, 1.5708, -1.0, 1.0); //https://www.servocity.com/hs-646wp-servo bounds reflect +- 180 degrees
+
+        ROS_DEBUG_STREAM("Processed right: " << right_motor_cmd << " Processed left: " << left_motor_cmd << " Processed head: " << head_motor_cmd);
 
         if(!is_first_pass) {
-            connection.setController(right_motor_cmd, left_motor_cmd, 0); //head servo currently zero
+            connection.setController(right_motor_cmd, left_motor_cmd, head_motor_cmd); //head servo currently zero
         }
         is_first_pass = false;
 
