@@ -99,11 +99,13 @@ namespace gb_hardware_interface
         // fan
         fan_gpio = 149;
         gpio_export(fan_gpio);
-        gpio_set_dir(fan_gpio, 1);
         // siren
         siren_gpio = 200;
         gpio_export(siren_gpio);
-        gpio_set_dir(siren_gpio, 1);
+
+	ros::Duration(0.5).sleep(); //Give time for GPIO to be exported correctly
+	gpio_set_dir(fan_gpio, 1);
+	gpio_set_dir(siren_gpio, 1);
 
         nh_.param("/gb/hardware_interface/speed_of_sound", speed_of_sound, 343.0);
         nh_.param("/gb/hardware_interface/encoder_ticks_per_rot", encoder_ticks_per_rot, 374.0);
