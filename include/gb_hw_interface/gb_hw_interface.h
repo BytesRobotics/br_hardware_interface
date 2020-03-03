@@ -20,6 +20,7 @@
 #include <sensor_msgs/Range.h>
 #include <gb_hw_interface/gb_hw.h>
 #include <control_toolbox/pid.h>
+#include <std_msgs/Bool.h>
 
 
 using namespace hardware_interface;
@@ -87,6 +88,14 @@ namespace gb_hardware_interface
         ros::Publisher nav_sat_speed_pub;
         ros::Publisher nav_sat_angle_pub;
         ros::Publisher nav_sat_satellites_pub;
+
+        ros::Subscriber siren_sub;
+        ros::Subscriber fan_sub;
+
+        void siren_cb(const std_msgs::Bool::ConstPtr& msg);
+        int siren_gpio;
+        void fan_cb(const std_msgs::Bool::ConstPtr& msg);
+        int fan_gpio;
 
         double speed_of_sound; // will be recomputed based on temperature readings (should be in m/s)
         double encoder_ticks_per_rot;

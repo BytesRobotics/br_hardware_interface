@@ -5,6 +5,7 @@
 #include <joint_limits_interface/joint_limits_urdf.h>
 #include <joint_limits_interface/joint_limits_rosparam.h>
 #include "usb_hw_interface/arduino_com.h"
+#include "gpio/gpio.h"
 #include <unistd.h>
 #include <cmath>
 #include <math.h>
@@ -89,6 +90,20 @@ namespace gb_hardware_interface
         last_latitude = 0;
         last_longitude = 0;
         last_latitude = 0;
+
+        // Setup GPIO controls for siren and fan
+        siren_sub = nh_.subscribe("siren", 10, &GBHardwareInterface::siren_cb, this);
+        fan_sub = nh_.subscribe("fan", 10, &GBHardwareInterface::fan_cb, this);
+
+        // configure gpio
+        // fan
+        fan_gpio = 5;
+        gpio_export(fan_gpio);
+        gpio_set_dir(fan_gpio, 1);
+        // siren
+        siren_gpio = 6;
+        gpio_export(siren_gpio);
+        gpio_set_dir(siren_gpio, 1);
 
         nh_.param("/gb/hardware_interface/speed_of_sound", speed_of_sound, 343.0);
         nh_.param("/gb/hardware_interface/encoder_ticks_per_rot", encoder_ticks_per_rot, 374.0);
@@ -312,5 +327,17 @@ namespace gb_hardware_interface
         is_first_pass = false;
 
         last_cmd_time_ = ros::Time::now();
+    }
+
+    void GBHardwareInterface::siren_cb(const std_msgs::Bool::ConstPtr& msg){
+        ROS_DEBUG_STREAM("Toggle Siren");
+        if(msg->data == true){gpio_set_value(siren_gpio, 1);}
+        else {gpio_set_value(siren_gpio, 0);}
+    }
+
+    void GBHardwareInterface::fan_cb(const std_msgs::Bool::ConstPtr& msg){
+        ROS_DEBUG_STREAM("Toggle Fan");
+        if(msg->data == true){gpio_set_value(fan_gpio, 1);}
+        else {gpio_set_value(fan_gpio, 0);}
     }
 }

@@ -146,7 +146,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
  add_executable(gb_hardware_interface_node src/hw_interface.cpp src/serial.cpp src/unix.cpp src/arduino_com.cpp)
 
- add_executable(gb_roscontrol_hardware_interface_node src/roscontrol_hw_interface_node.cpp src/roscontrol_hw_interface.cpp src/serial.cpp src/unix.cpp src/arduino_com.cpp)
+ add_executable(gb_roscontrol_hardware_interface_node src/roscontrol_hw_interface_node.cpp src/roscontrol_hw_interface.cpp src/serial.cpp src/unix.cpp src/arduino_com.cpp src/gpio.cpp)
 
 
 ## Rename C++ executable without prefix
