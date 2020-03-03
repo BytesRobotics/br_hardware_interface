@@ -97,11 +97,11 @@ namespace gb_hardware_interface
 
         // configure gpio
         // fan
-        fan_gpio = 5;
+        fan_gpio = 149;
         gpio_export(fan_gpio);
         gpio_set_dir(fan_gpio, 1);
         // siren
-        siren_gpio = 6;
+        siren_gpio = 200;
         gpio_export(siren_gpio);
         gpio_set_dir(siren_gpio, 1);
 
