@@ -6,8 +6,8 @@
 
     <rosparam file="$(find br-hardware-interface)/config/hardware.yaml" command="load"/>
 <!--    <rosparam file="$(find br-hardware-interface)/config/joint_limits.yaml" command="load"/>--> <!-- Causes unreliable motion -->
-    <rosparam command="load" file="$(find br-control)/config/gb_control.yaml" />
-    <node name="gb_hardware_interface" pkg="br-hardware-interface" type="gb_roscontrol_hardware_interface_node" output="screen">
+    <rosparam command="load" file="$(find br-control)/config/br_control.yaml" />
+    <node name="br_hardware_interface" pkg="br-hardware-interface" type="br_roscontrol_hardware_interface_node" output="screen">
         <param name="head_max_pose" value="$(arg head_max_pose)"/>
         <param name="head_min_pose" value="$(arg head_min_pose)"/>
         <param name="head_zero_pose" value="$(arg head_zero_pose)"/>
