@@ -18,7 +18,7 @@
 #include <std_msgs/Int32.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/Range.h>
-#include <gb_hw_interface/gb_hw.h>
+#include <br_hw_interface/br_hw.h>
 #include <control_toolbox/pid.h>
 #include <std_msgs/Bool.h>
 
@@ -51,16 +51,16 @@ inline float to_distance(int pulse_us, float speed_of_sound) {
 }
 
 
-namespace gb_hardware_interface
+namespace br_hardware_interface
 {
 //    static const double POSITION_STEP_FACTOR = 10;
 //    static const double VELOCITY_STEP_FACTOR = 10;
 
-    class GBHardwareInterface: public gb_hardware_interface::GBHardware
+    class BRHardwareInterface: public br_hardware_interface::BRHardware
     {
     public:
-        GBHardwareInterface(ros::NodeHandle& nh);
-        ~GBHardwareInterface();
+        BRHardwareInterface(ros::NodeHandle& nh);
+        ~BRHardwareInterface();
         void init();
         void update(const ros::TimerEvent& e);
         void read();

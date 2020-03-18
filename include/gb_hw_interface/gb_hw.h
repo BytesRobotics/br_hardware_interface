@@ -12,10 +12,10 @@
 #include <boost/scoped_ptr.hpp>
 #include <ros/ros.h>
 
-namespace gb_hardware_interface
+namespace br_hardware_interface
 {
     /// brief Hardware interface for a robot
-    class GBHardware : public hardware_interface::RobotHW
+    class BRHardware : public hardware_interface::RobotHW
     {
     protected:
         // Interfaces

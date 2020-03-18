@@ -1,5 +1,5 @@
 #include <sstream>
-#include <gb_hw_interface/gb_hw_interface.h>
+#include <br_hw_interface/br_hw_interface.h>
 #include <joint_limits_interface/joint_limits_interface.h>
 #include <joint_limits_interface/joint_limits.h>
 #include <joint_limits_interface/joint_limits_urdf.h>
@@ -18,9 +18,9 @@ using joint_limits_interface::VelocityJointSoftLimitsInterface;
 
 //https://slaterobots.com/blog/5abd8a1ed4442a651de5cb5b/how-to-implement-ros_control-on-a-custom-robot
 
-namespace gb_hardware_interface
+namespace br_hardware_interface
 {
-    GBHardwareInterface::GBHardwareInterface(ros::NodeHandle& nh) : nh_(nh), connection("/dev/ttyACM0", 115200){
+   BRHardwareInterface::BRHardwareInterface(ros::NodeHandle& nh) : nh_(nh), connection("/dev/ttyACM0", 115200){
 
         // Setup joint state velocity stuff
         is_first_pass = true; //after all state variables are set control loop begins
@@ -92,8 +92,8 @@ namespace gb_hardware_interface
         last_latitude = 0;
 
         // Setup GPIO controls for siren and fan
-        siren_sub = nh_.subscribe("siren", 10, &GBHardwareInterface::siren_cb, this);
-        fan_sub = nh_.subscribe("fan", 10, &GBHardwareInterface::fan_cb, this);
+        siren_sub = nh_.subscribe("siren", 10, &BRHardwareInterface::siren_cb, this);
+        fan_sub = nh_.subscribe("fan", 10, &BRHardwareInterface::fan_cb, this);
 
         // configure gpio
         // fan
@@ -107,25 +107,25 @@ namespace gb_hardware_interface
 	gpio_set_dir(fan_gpio, 1);
 	gpio_set_dir(siren_gpio, 1);
 
-        nh_.param("/gb/hardware_interface/speed_of_sound", speed_of_sound, 343.0);
-        nh_.param("/gb/hardware_interface/encoder_ticks_per_rot", encoder_ticks_per_rot, 374.0);
+        nh_.param("/br/hardware_interface/speed_of_sound", speed_of_sound, 343.0);
+        nh_.param("/br/hardware_interface/encoder_ticks_per_rot", encoder_ticks_per_rot, 374.0);
 
         init();
 
         controller_manager_.reset(new controller_manager::ControllerManager(this, nh_));
-        nh_.param("/gb/hardware_interface/loop_hz", loop_hz_, 0.1);
+        nh_.param("/br/hardware_interface/loop_hz", loop_hz_, 0.1);
         ros::Duration update_freq = ros::Duration(1.0/loop_hz_);
-        non_realtime_loop_ = nh_.createTimer(update_freq, &GBHardwareInterface::update, this);
+        non_realtime_loop_ = nh_.createTimer(update_freq, &BRHardwareInterface::update, this);
 
     }
 
-    GBHardwareInterface::~GBHardwareInterface() {
+    BRHardwareInterface::~BRHardwareInterface() {
 
     }
 
-    void GBHardwareInterface::init() {
+    void BRHardwareInterface::init() {
         // Get joint names
-        nh_.getParam("/gb/hardware_interface/joints", joint_names_);
+        nh_.getParam("/br/hardware_interface/joints", joint_names_);
         num_joints_ = joint_names_.size();
 
         // Resize vectors
@@ -171,14 +171,14 @@ namespace gb_hardware_interface
 //        registerInterface(&velocity_joint_limits_interface_);
     }
 
-    void GBHardwareInterface::update(const ros::TimerEvent& e) {
+    void BRHardwareInterface::update(const ros::TimerEvent& e) {
         elapsed_time_ = ros::Duration(e.current_real - e.last_real);
         read();
         controller_manager_->update(ros::Time::now(), elapsed_time_);
         write(elapsed_time_);
     }
 
-    void GBHardwareInterface::read() {
+    void BRHardwareInterface::read() {
 
         while(!connection.readController()){ROS_DEBUG("Could not read hardware controller from /dev/ttyACM0");}
 
@@ -276,7 +276,7 @@ namespace gb_hardware_interface
         nav_sat_angle_pub.publish(angle);
     }
 
-    void GBHardwareInterface::write(ros::Duration elapsed_time) {
+    void BRHardwareInterface::write(ros::Duration elapsed_time) {
 
         velocity_joint_limits_interface_.enforceLimits(elapsed_time);
 
@@ -331,13 +331,13 @@ namespace gb_hardware_interface
         last_cmd_time_ = ros::Time::now();
     }
 
-    void GBHardwareInterface::siren_cb(const std_msgs::Bool::ConstPtr& msg){
+    void BRHardwareInterface::siren_cb(const std_msgs::Bool::ConstPtr& msg){
         ROS_DEBUG_STREAM("Toggle Siren");
         if(msg->data == true){gpio_set_value(siren_gpio, 1);}
         else {gpio_set_value(siren_gpio, 0);}
     }
 
-    void GBHardwareInterface::fan_cb(const std_msgs::Bool::ConstPtr& msg){
+    void BRHardwareInterface::fan_cb(const std_msgs::Bool::ConstPtr& msg){
         ROS_DEBUG_STREAM("Toggle Fan");
         if(msg->data == true){gpio_set_value(fan_gpio, 1);}
         else {gpio_set_value(fan_gpio, 0);}
