@@ -1,4 +1,4 @@
-# gb-hardware-interface
+# br-hardware-interface
 Node to interface with cortex-M0 hardware controller
 
 https://github.com/awesomebytes/control_toolbox_pid_tutorial

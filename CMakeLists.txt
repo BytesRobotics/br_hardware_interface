@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(gb-hardware-interface)
+project(br-hardware-interface)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -115,7 +115,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES gb-hardware-interface
+#  LIBRARIES br-hardware-interface
   CATKIN_DEPENDS roscpp hardware_interface
 #  DEPENDS system_lib
 )
@@ -210,7 +210,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_gb-hardware-interface.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_br-hardware-interface.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
