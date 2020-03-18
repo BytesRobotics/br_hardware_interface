@@ -1,4 +1,4 @@
-gb:
+br:
  hardware_interface:
   loop_hz: 50 # hz
   speed_of_sound: 343.0
