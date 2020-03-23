@@ -220,10 +220,10 @@ install(DIRECTORY scripts/
   PATTERN ".svn" EXCLUDE
 )
 
-install(DIRECTORY hw_com_test/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/hw_com_test
-  PATTERN ".svn" EXCLUDE
-)
+# install(DIRECTORY hw_com_test/
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/hw_com_test
+#   PATTERN ".svn" EXCLUDE
+# )
 
 #############
 ## Testing ##
