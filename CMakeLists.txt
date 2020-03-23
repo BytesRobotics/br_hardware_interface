@@ -185,7 +185,7 @@ install(PROGRAMS
 )
 
 ## Mark executables and/or libraries for installation
-install(TARGETS br_roscontrol_hardware_interface_node ${PROJECT_NAME}_node
+install(TARGETS br_roscontrol_hardware_interface_node br_hardware_interface_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
