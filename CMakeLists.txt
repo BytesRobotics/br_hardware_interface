@@ -205,6 +205,11 @@ include_directories(
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
 
+install( TARGETS
+    #list of nodes
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 catkin_install_python(PROGRAMS src/gps_variance_calculator.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
