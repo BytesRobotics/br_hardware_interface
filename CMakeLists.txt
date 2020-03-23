@@ -210,6 +210,21 @@ install(DIRECTORY launch/
   PATTERN ".svn" EXCLUDE
 )
 
+install(DIRECTORY config/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+  PATTERN ".svn" EXCLUDE
+)
+
+install(DIRECTORY scripts/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/scripts
+  PATTERN ".svn" EXCLUDE
+)
+
+install(DIRECTORY hw_com_test/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/hw_com_test
+  PATTERN ".svn" EXCLUDE
+)
+
 #############
 ## Testing ##
 #############
