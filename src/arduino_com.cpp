@@ -96,7 +96,7 @@ bool HardwareCom::readController(){
         if(pec == static_cast<uint8_t>(incomingPacket[incomingPacketLength-1])){
 //            std::cout << "PEC Correct\n";
             //Fill in channel array with distance sensor values
-            for(int i =0; i<8; i+=2){channels[i/2] = static_cast<int>(incomingPacket[i] | (incomingPacket[i+1]<<8));}
+            for(int i =0; i<10; i+=2){channels[i/2] = static_cast<int>(incomingPacket[i] | (incomingPacket[i+1]<<8));}
 
             encoderLeft = static_cast<int>(incomingPacket[10] | (incomingPacket[11]<<8) | (incomingPacket[12]<<16) | (incomingPacket[13]<<24));
             encoderRight = static_cast<int>(incomingPacket[14] | (incomingPacket[15]<<8) | (incomingPacket[16]<<16) | (incomingPacket[17]<<24));
