@@ -131,24 +131,20 @@ bool HardwareCom::readController(){
     return false;
 }
 
-int HardwareCom::getCh1() {
-    return channels[0];
-}
-
-int HardwareCom::getCh2() {
-    return channels[1];
-}
-
-int HardwareCom::getCh3() {
-    return channels[2];
-}
-
-int HardwareCom::getCh4() {
-    return channels[3];
-}
-
-int HardwareCom::getCh5() {
-    return channels[4];
+int HardwareCom::getCh(int channel) {
+    int returnVal;
+    if(abs(channels_past[channel]-channels[channel])<maxDiff || channels_last_update_skipped[channel]){
+        // Apply mild filtering
+        returnVal = static_cast<int>(round((channels_past[channel]+2*channels[channel])/3.0));
+        channels_past[channel] = returnVal;
+        channels_last_update_skipped[channel] = false;
+    } else {
+        std::cout << "Value ignored" << std::endl;
+        returnVal = channels_past[channel];
+        // We dont want to skip more that once in a row
+        channels_last_update_skipped[channel] = true;
+    }
+    return returnVal;
 }
 
 long HardwareCom::getEncoderLeft() {

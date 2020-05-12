@@ -92,15 +92,15 @@ int main(int argc, char * argv[])
           lwheel_encoder_pub.publish(encoder);
 
           std_msgs::Float64 dist;
-          dist.data = to_distance(connection.getCh1());
+          dist.data = to_distance(connection.getCh(0));
           front_distance_pub.publish(dist);
-          dist.data = to_distance(connection.getCh4());
+          dist.data = to_distance(connection.getCh(3));
           rear_distance_pub.publish(dist);
-          dist.data = to_distance(connection.getCh3());
+          dist.data = to_distance(connection.getCh(2));
           right_distance_pub.publish(dist);
-          dist.data = to_distance(connection.getCh2());
+          dist.data = to_distance(connection.getCh(1));
           left_distance_pub.publish(dist);
-          dist.data = to_distance(connection.getCh5());
+          dist.data = to_distance(connection.getCh(4));
           bottom_distance_pub.publish(dist);
 
           sensor_msgs::NavSatFix navSat;

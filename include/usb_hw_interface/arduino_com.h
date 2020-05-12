@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdint>
 #include <bitset>
+#include <cmath>
 
 #include "serial/serial.h"
 
@@ -36,7 +37,11 @@ class HardwareCom
   const int incomingPacketLength = 40;
   uint8_t incomingPacket[40]; //Packet from the zero (length = 12 + PEC)
   int channels[5] = {}; //Values from CH1 to Ch5 for distance sensors
-  //  front_dist_pin  CH1
+  int channels_past[5] = {}; //Values from CH1 to Ch5 for distance sensor filtering
+  bool channels_last_update_skipped[5] = {}; //Did we skip the last value because of a maxDiff problem
+  const int maxDiff{3000}; //The maximum difference between values for it to be accepted. Above this we assume the value is bad
+
+    //  front_dist_pin  CH1
   //  left_dist_pin   CH2
   //  right_dist_pin  CH3
   //  rear_dist_pin   CH4
@@ -53,11 +58,7 @@ public:
   HardwareCom(std::string port, int baud);            //Constructor
   bool setController(double rmotor_cmd, double lmotor_cmd, double head_cmd); //Sends input commands to arduino zero
   bool readController();                            //Returns data read from the arduino zero
-  int getCh1();
-  int getCh2();
-  int getCh3();
-  int getCh4();
-  int getCh5();
+  int getCh(int channel);
   long getEncoderLeft();
   long getEncoderRight();
   float getLatitude();
