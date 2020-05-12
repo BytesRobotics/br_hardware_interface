@@ -27,18 +27,23 @@ Adafruit_GPS GPS(&GPSSerial);
 // PWM pin 2 is PA10 TCC1-W0/TCC0-W2
 #define dist_timeout = 24000 //~400CM/4M max distance (time in microseconds) - 24ms - 41.67Hz - NOT Used in current implementation
 // Echo pins for the 5 onboard distance sensors
-#define front_dist_pin 0  //CH1
-#define left_dist_pin 1   //CH2 45 degree offset from front (absolute min = 15)
-#define right_dist_pin 6  //CH3 45 degree offset from front
-#define rear_dist_pin 8   //CH4
-#define bottom_dist_pin 9 //CH5
+#define front_dist_pin        0 //CH1
+#define front_left_dist_pin   1 //CH2
+#define front_right_dist_pin  6 //CH3
+#define front_bottom_dist_pin 9 //CH4
+#define rear_dist_pin         8 //CH5
+#define rear_left_dist_pin    A2 //CH6
+#define rear_right_dist_pin   A3 //CH7 
+#define rear_bottom_dist_pin  A4 //CH8 
+#define left_dist_pin         A5 //CH9
+#define right_dist_pin        A6 //CH10
 
 
 // Definitions for the rotary encoder
 // https://youtu.be/V1txmR8GXzE
-#define left_wheel_encoder_a_pin A1
+#define left_wheel_encoder_a_pin A0 // Updated from the last version
 #define left_wheel_encoder_b_pin 10
-#define right_wheel_encoder_a_pin A2
+#define right_wheel_encoder_a_pin A1 // Updated from the last version
 #define right_wheel_encoder_b_pin 11
 #define encoder_counts_per_revolution = 374 // Not used in current implementation
 
@@ -105,6 +110,26 @@ volatile unsigned long ch_5_rising, ch5_duty_cycle;
 void ch5_rising_interrupt();
 void ch5_falling_interrupt();
 
+volatile unsigned long ch_6_rising, ch6_duty_cycle;
+void ch6_rising_interrupt();
+void ch6_falling_interrupt();
+
+volatile unsigned long ch_7_rising, ch7_duty_cycle;
+void ch7_rising_interrupt();
+void ch7_falling_interrupt();
+
+volatile unsigned long ch_8_rising, ch8_duty_cycle;
+void ch8_rising_interrupt();
+void ch8_falling_interrupt();
+
+volatile unsigned long ch_9_rising, ch9_duty_cycle;
+void ch9_rising_interrupt();
+void ch9_falling_interrupt();
+
+volatile unsigned long ch_10_rising, ch10_duty_cycle;
+void ch10_rising_interrupt();
+void ch10_falling_interrupt();
+
 //Function for converting input (-1000 to 1000) to microseconds (1000 to 2000)
 inline int calculateHardwareValues(int input) {
   input = constrain(input, -1000, 1000);
@@ -140,18 +165,30 @@ void setup() {
   head_servo.writeMicroseconds(1500); //Set servo to zero position
 
   //define pin functions for the distance sensors
+  
   pinMode(trig_pin, OUTPUT);
+  
   pinMode(front_dist_pin, INPUT);
+  pinMode(front_left_dist_pin, INPUT);
+  pinMode(front_right_dist_pin, INPUT);
+  pinMode(front_bottom_dist_pin, INPUT);
+  pinMode(rear_dist_pin, INPUT);
+  pinMode(rear_left_dist_pin, INPUT);
+  pinMode(rear_right_dist_pin, INPUT);
+  pinMode(rear_bottom_dist_pin, INPUT);
   pinMode(left_dist_pin, INPUT);
   pinMode(right_dist_pin, INPUT);
-  pinMode(rear_dist_pin, INPUT);
-  pinMode(bottom_dist_pin, INPUT);
   
   attachInterrupt(digitalPinToInterrupt(front_dist_pin), ch1_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(left_dist_pin), ch2_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(right_dist_pin), ch3_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(rear_dist_pin), ch4_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(bottom_dist_pin), ch5_rising_interrupt, RISING);  
+  attachInterrupt(digitalPinToInterrupt(front_left_dist_pin), ch2_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(front_right_dist_pin), ch3_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(front_bottom_dist_pin), ch4_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(rear_dist_pin), ch5_rising_interrupt, RISING);  
+  attachInterrupt(digitalPinToInterrupt(rear_left_dist_pin), ch6_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(rear_right_dist_pin), ch7_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(rear_bottom_dist_pin), ch8_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(left_dist_pin), ch9_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(right_dist_pin), ch10_rising_interrupt, RISING);  
 
   //Start distance sensing
   config_pwm(); //Start PWM pulses on pin 7 to control trigger pins on ultrasonic sensors
@@ -185,7 +222,9 @@ void setup() {
 }
 
 void loop() {
- // Serial.println("CH1: " + String(ch1_duty_cycle) + " CH2: " + String(ch2_duty_cycle) + " CH3: " + String(ch3_duty_cycle) + " CH4: " + String(ch4_duty_cycle) + " CH5: " + String(ch5_duty_cycle));
+ Serial.println("CH1: " + String(ch1_duty_cycle) + " CH2: " + String(ch2_duty_cycle) + " CH3: " + String(ch3_duty_cycle) + " CH4: " + String(ch4_duty_cycle) + " CH5: " + String(ch5_duty_cycle)
+              + " CH6: " + String(ch6_duty_cycle) + " CH7: " + String(ch7_duty_cycle) + " CH8: " + String(ch8_duty_cycle) + " CH9: " + String(ch9_duty_cycle) + " CH10: " + String(ch10_duty_cycle));
+ Serial.println(digitalPinToInterrupt(2));
 
   now = millis();//get current time to  ensure connection to main contorller
 
@@ -305,7 +344,7 @@ void loop() {
     for(int i=1; i<outGoingPacketLength-1;i++){PEC ^= outGoingPacket[i];}
     outGoingPacket[outGoingPacketLength-1] = PEC;
 
-    Serial.write(outGoingPacket, outGoingPacketLength);
+    //Serial.write(outGoingPacket, outGoingPacketLength);
   }
 
   if (Serial.available() > 0) {
