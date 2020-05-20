@@ -14,6 +14,9 @@ typedef union
  uint8_t bytes[4];
 } FLOATUNION_t;
 
+//Interupts need to be configured to add 2 more for wheel encoders.
+//File path for arduino SAMD21 files: C:\Users\Gavin Remme\AppData\Local\Arduino15\packages\arduino\hardware\samd
+
 
 // GPS config
 // https://github.com/adafruit/Adafruit_GPS/blob/master/Adafruit_GPS.h
@@ -26,24 +29,21 @@ Adafruit_GPS GPS(&GPSSerial);
 #define trig_pin 7 //only one trig pin that will handle all the sensors (PWM freq will be 1/period with dutycycle equivalent to 10us) period = timeout length
 // PWM pin 2 is PA10 TCC1-W0/TCC0-W2
 #define dist_timeout = 24000 //~400CM/4M max distance (time in microseconds) - 24ms - 41.67Hz - NOT Used in current implementation
-// Echo pins for the 5 onboard distance sensors
-#define front_dist_pin        0 //CH1
-#define front_left_dist_pin   1 //CH2
-#define front_right_dist_pin  6 //CH3
-#define front_bottom_dist_pin 9 //CH4
-#define rear_dist_pin         8 //CH5
-#define rear_left_dist_pin    A2 //CH6
-#define rear_right_dist_pin   A3 //CH7 
-#define rear_bottom_dist_pin  A4 //CH8 
-#define left_dist_pin         A5 //CH9
-#define right_dist_pin        A6 //CH10
-
+// Echo pins for the 8 onboard distance sensors, labeled Ch1-CH8, use pins 0,1,4,5,6,7,8,9,A1,A2 for interrupts 
+#define CH1 0  //CH1
+#define CH2 1
+#define CH3 4
+#define CH4 5
+#define CH5 6
+#define CH6 7
+#define CH7 8
+#define CH8 9
 
 // Definitions for the rotary encoder
 // https://youtu.be/V1txmR8GXzE
-#define left_wheel_encoder_a_pin A0 // Updated from the last version
+#define left_wheel_encoder_a_pin A1
 #define left_wheel_encoder_b_pin 10
-#define right_wheel_encoder_a_pin A1 // Updated from the last version
+#define right_wheel_encoder_a_pin A2
 #define right_wheel_encoder_b_pin 11
 #define encoder_counts_per_revolution = 374 // Not used in current implementation
 
@@ -122,13 +122,14 @@ volatile unsigned long ch_8_rising, ch8_duty_cycle;
 void ch8_rising_interrupt();
 void ch8_falling_interrupt();
 
-volatile unsigned long ch_9_rising, ch9_duty_cycle;
+/*volatile unsigned long ch_9_rising, ch9_duty_cycle;
 void ch9_rising_interrupt();
 void ch9_falling_interrupt();
 
 volatile unsigned long ch_10_rising, ch10_duty_cycle;
 void ch10_rising_interrupt();
 void ch10_falling_interrupt();
+*/
 
 //Function for converting input (-1000 to 1000) to microseconds (1000 to 2000)
 inline int calculateHardwareValues(int input) {
@@ -165,30 +166,26 @@ void setup() {
   head_servo.writeMicroseconds(1500); //Set servo to zero position
 
   //define pin functions for the distance sensors
-  
   pinMode(trig_pin, OUTPUT);
+  pinMode(CH1, INPUT);
+  pinMode(CH2, INPUT);
+  pinMode(CH3, INPUT);
+  pinMode(CH4, INPUT);
+  pinMode(CH5, INPUT);
+  pinMode(CH6, INPUT);
+  pinMode(CH7, INPUT);
+  pinMode(CH8, INPUT);
   
-  pinMode(front_dist_pin, INPUT);
-  pinMode(front_left_dist_pin, INPUT);
-  pinMode(front_right_dist_pin, INPUT);
-  pinMode(front_bottom_dist_pin, INPUT);
-  pinMode(rear_dist_pin, INPUT);
-  pinMode(rear_left_dist_pin, INPUT);
-  pinMode(rear_right_dist_pin, INPUT);
-  pinMode(rear_bottom_dist_pin, INPUT);
-  pinMode(left_dist_pin, INPUT);
-  pinMode(right_dist_pin, INPUT);
-  
-  attachInterrupt(digitalPinToInterrupt(front_dist_pin), ch1_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(front_left_dist_pin), ch2_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(front_right_dist_pin), ch3_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(front_bottom_dist_pin), ch4_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(rear_dist_pin), ch5_rising_interrupt, RISING);  
-  attachInterrupt(digitalPinToInterrupt(rear_left_dist_pin), ch6_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(rear_right_dist_pin), ch7_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(rear_bottom_dist_pin), ch8_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(left_dist_pin), ch9_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(right_dist_pin), ch10_rising_interrupt, RISING);  
+  attachInterrupt(digitalPinToInterrupt(CH1), ch1_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH2), ch2_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH3), ch3_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH4), ch4_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH5), ch5_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH6), ch6_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH7), ch7_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH8), ch8_rising_interrupt, RISING);
+  //attachInterrupt(digitalPinToInterrupt(ultrasonic9_pin), ch9_rising_interrupt, RISING);
+  //attachInterrupt(digitalPinToInterrupt(ultrasonic10_pin), ch10_rising_interrupt, RISING);  
 
   //Start distance sensing
   config_pwm(); //Start PWM pulses on pin 7 to control trigger pins on ultrasonic sensors
@@ -222,13 +219,18 @@ void setup() {
 }
 
 void loop() {
- Serial.println("CH1: " + String(ch1_duty_cycle) + " CH2: " + String(ch2_duty_cycle) + " CH3: " + String(ch3_duty_cycle) + " CH4: " + String(ch4_duty_cycle) + " CH5: " + String(ch5_duty_cycle)
-              + " CH6: " + String(ch6_duty_cycle) + " CH7: " + String(ch7_duty_cycle) + " CH8: " + String(ch8_duty_cycle) + " CH9: " + String(ch9_duty_cycle) + " CH10: " + String(ch10_duty_cycle));
- Serial.println(digitalPinToInterrupt(2));
+ Serial.println("CH1: " + String(ch1_duty_cycle) + " CH2: " + String(ch2_duty_cycle) + " CH3: " + String(ch3_duty_cycle) + " CH4: " + String(ch4_duty_cycle));
+ Serial.println("CH5: " + String(ch5_duty_cycle) + " CH6: " + String(ch6_duty_cycle) + " CH7: " + String(ch7_duty_cycle) + " CH8: " + String(ch8_duty_cycle));
+ //if((ch3_duty_cycle || ch4_duty_cycle || ch6_duty_cycle) == 0)
+ if((ch1_duty_cycle && ch2_duty_cycle && ch3_duty_cycle && ch4_duty_cycle && ch5_duty_cycle && ch6_duty_cycle && ch7_duty_cycle && ch7_duty_cycle) == 0) //test to see that all sensors are working
+ {
+  Serial.println("One or more sensors are reading a value of zero!");
+ }
+ delay(500);
 
   now = millis();//get current time to  ensure connection to main contorller
 
-  if (wdt_isTripped || now - lastPacket > 500) { //If the contorller hasn't recived a new packet in half a second (short circuit limits calcs)
+  if (wdt_isTripped || now - lastPacket > 500) { //If the controller hasn't recived a new packet in half a second (short circuit limits calcs)
 
     left_wheel_cmd = 0;
     right_wheel_cmd = 0;
