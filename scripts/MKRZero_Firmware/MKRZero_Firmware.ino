@@ -7,6 +7,12 @@
 // https://howtomechatronics.com/tutorials/arduino/ultrasonic-sensor-hc-sr04/
 // https://www.avdweb.nl/arduino/samd21/virus
 
+//Steps to initialize additional interrupts:
+//CLK_EIC_APB = 0x21; //Enable CLK_EIC_APB
+//Enable GCLK_EIC (if we need edge detection or filtering)
+//Write the EIC configuration registers(EVCCTRL, WAKEUP, CONFIGy)
+//Enable EIC
+
 // Allows us to get byte array from float which is important for data transmission
 typedef union
 {
@@ -219,14 +225,16 @@ void setup() {
 }
 
 void loop() {
- Serial.println("CH1: " + String(ch1_duty_cycle) + " CH2: " + String(ch2_duty_cycle) + " CH3: " + String(ch3_duty_cycle) + " CH4: " + String(ch4_duty_cycle));
- Serial.println("CH5: " + String(ch5_duty_cycle) + " CH6: " + String(ch6_duty_cycle) + " CH7: " + String(ch7_duty_cycle) + " CH8: " + String(ch8_duty_cycle));
+  Serial.println(ch1_duty_cycle);
+ /*Serial.println("CH1: " + String(ch1_duty_cycle) + " CH2: " + String(ch2_duty_cycle) + " CH3: " + String(ch3_duty_cycle) + " CH4: " + String(ch4_duty_cycle));
+ //Serial.println("CH5: " + String(ch5_duty_cycle) + " CH6: " + String(ch6_duty_cycle) + " CH7: " + String(ch7_duty_cycle) + " CH8: " + String(ch8_duty_cycle));
  //if((ch3_duty_cycle || ch4_duty_cycle || ch6_duty_cycle) == 0)
  if((ch1_duty_cycle && ch2_duty_cycle && ch3_duty_cycle && ch4_duty_cycle && ch5_duty_cycle && ch6_duty_cycle && ch7_duty_cycle && ch7_duty_cycle) == 0) //test to see that all sensors are working
  {
   Serial.println("One or more sensors are reading a value of zero!");
  }
- delay(500);
+ */
+ delay(100);
 
   now = millis();//get current time to  ensure connection to main contorller
 
@@ -236,7 +244,7 @@ void loop() {
     right_wheel_cmd = 0;
 
     if (wdt_isTripped == false) {
-      Serial.println("Drive controller watchdog tripped!");
+      //Serial.println("Drive controller watchdog tripped!");
     }
     wdt_isTripped = true;
   }
