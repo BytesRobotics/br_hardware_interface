@@ -36,21 +36,23 @@ Adafruit_GPS GPS(&GPSSerial);
 // PWM pin 2 is PA10 TCC1-W0/TCC0-W2
 #define dist_timeout = 24000 //~400CM/4M max distance (time in microseconds) - 24ms - 41.67Hz - NOT Used in current implementation
 // Echo pins for the 8 onboard distance sensors, labeled Ch1-CH8, use pins 0,1,4,5,6,7,8,9,A1,A2 for interrupts 
-#define CH1 0  //CH1
-#define CH2 1
-#define CH3 4
-#define CH4 5
-#define CH5 6
-#define CH6 7
-#define CH7 8
-#define CH8 9
+#define CH0 MOSI  //Pins for ultrasonic sensors, this one is PA16 one is pad PA16 in the uM
+#define CH1 SCK //PA17
+#define CH2 A1 //PB02
+#define CH3 MISO //PA19
+#define CH4 A3 //        
+#define CH5 A4
+#define CH6 A5
+#define CH7 A6
+#define CH8 A2
+#define CH9 2
 
 // Definitions for the rotary encoder
 // https://youtu.be/V1txmR8GXzE
-#define left_wheel_encoder_a_pin A1
-#define left_wheel_encoder_b_pin 10
-#define right_wheel_encoder_a_pin A2
-#define right_wheel_encoder_b_pin 11
+#define left_wheel_encoder_a_pin 4
+#define left_wheel_encoder_b_pin SDA
+#define right_wheel_encoder_a_pin SWDIO
+#define right_wheel_encoder_b_pin PA15
 #define encoder_counts_per_revolution = 374 // Not used in current implementation
 
 // count the total number of pulses since the start of tracking
@@ -59,13 +61,13 @@ volatile long right_wheel_pulses = 0;
 
 
 // Control config
-#define left_wheel_speed_pin 4
+#define left_wheel_speed_pin 12
 int left_wheel_cmd = 0;
-#define left_wheel_dir_pin 2
+#define left_wheel_dir_pin LED_BUILTIN
 
-#define right_wheel_speed_pin 5
+#define right_wheel_speed_pin 6
 int right_wheel_cmd = 0;
-#define right_wheel_dir_pin 3
+#define right_wheel_dir_pin PA14
 
 int head_servo_cmd = 0;
 Servo head_servo;
