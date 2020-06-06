@@ -1,3 +1,14 @@
+//ch0
+void ch0_rising_interrupt(){
+  ch_0_rising = micros();
+  attachInterrupt(digitalPinToInterrupt(CH0), ch0_falling_interrupt, FALLING);
+}
+
+void ch0_falling_interrupt(){
+  ch0_duty_cycle = micros()-ch_0_rising;
+  attachInterrupt(digitalPinToInterrupt(CH0), ch0_rising_interrupt, RISING);
+}
+
 //ch1
 void ch1_rising_interrupt(){
   ch_1_rising = micros();
@@ -86,28 +97,18 @@ void ch8_falling_interrupt(){
   attachInterrupt(digitalPinToInterrupt(CH8), ch8_rising_interrupt, RISING);
 }
 
-/*ch9
+//ch9
 void ch9_rising_interrupt(){
   ch_9_rising = micros();
-  attachInterrupt(digitalPinToInterrupt(left_dist_pin), ch9_falling_interrupt, FALLING);
+  attachInterrupt(digitalPinToInterrupt(CH9), ch9_falling_interrupt, FALLING);
 }
 
 void ch9_falling_interrupt(){
   ch9_duty_cycle = micros()-ch_9_rising;
-  attachInterrupt(digitalPinToInterrupt(left_dist_pin), ch9_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH9), ch9_rising_interrupt, RISING);
 }
 
-//ch10
-void ch10_rising_interrupt(){
-  ch_10_rising = micros();
-  attachInterrupt(digitalPinToInterrupt(right_dist_pin), ch10_falling_interrupt, FALLING);
-}
 
-void ch10_falling_interrupt(){
-  ch10_duty_cycle = micros()-ch_10_rising;
-  attachInterrupt(digitalPinToInterrupt(right_dist_pin), ch10_rising_interrupt, RISING);
-}
-*/
 // Interrupts for motor encoders
 void right_wheel_encoder_interrupt(){
   if(digitalRead(right_wheel_encoder_b_pin)){
