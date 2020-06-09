@@ -1,5 +1,8 @@
 #include <Wire.h>
 
+int impactThreshold = 3500;
+int releaseThreshold = 2500;
+
 #define MS5xxx_CMD_RESET    0x1E    // perform reset
 #define MS5xxx_CMD_ADC_READ 0x00    // initiate read sequence
 #define MS5xxx_CMD_ADC_CONV 0x40    // start conversion
@@ -36,9 +39,11 @@ bool init_sensor(char addr){
 }
 
 void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, 0); //initailize the onboard LED to off
   Serial.begin(115200);
   Wire.begin();
-  Wire.setClock(400000L);
+  Wire.setClock(400000); //faster speed is 400000L
   while(!Serial);
 
   // Connect to sensor
@@ -48,14 +53,14 @@ void setup() {
 
 unsigned long left_sensor_read_start_time, right_sensor_read_start_time;
 bool left_sensor_is_reading=false, right_sensor_is_reading=false;
-unsigned long read_delay(530);
+unsigned long read_delay(550);
 unsigned long value_l=0, value_r=0;
 
-#define SMART_ARRAY_SIZE 100
+#define INPUT_FILTER_ARRAY_SIZE 10
 
-class SmartArray{
+class InputFilter{ //variant of SmartArray class used to lightly filter the input coming from the barometric pressure sensors
 public:
-  SmartArray(){}
+  InputFilter(){}
   unsigned long get_element(unsigned int index){
     return arr[(index - current_index_)%array_size_];
   }
@@ -88,10 +93,57 @@ public:
     return current_sum_of_differences_ / array_size_;
   }
 private:
+  unsigned long arr[INPUT_FILTER_ARRAY_SIZE]{0};
+  const unsigned int array_size_ = INPUT_FILTER_ARRAY_SIZE;
+  unsigned int current_index_ = 0;
+  unsigned long long current_sum_ = 0;
+  float current_sum_of_differences_ = 0;
+};
+
+#define SMART_ARRAY_SIZE 2000
+
+class SmartArray{
+public:
+  SmartArray(){}
+  unsigned long get_element(unsigned int index){
+    return arr[(index - current_index_)%array_size_];
+  }
+  void add_element(unsigned long element){
+    current_index_++;
+    current_index_ %= array_size_; // 
+    current_sum_ -= arr[current_index_];
+    current_sum_of_differences_ -= (float(arr[(current_index_+1)%array_size_]) - arr[current_index_]);
+    
+    arr[current_index_] = element;
+    
+    current_sum_ += arr[current_index_];
+    current_sum_of_differences_ += (float(arr[current_index_]) - arr[(current_index_-1)%array_size_]); 
+  }
+  unsigned long get_element(int index){
+    return arr[(index+current_index_)%array_size_];
+  }
+  unsigned long* get_array(){
+    return arr;
+  }
+  void print_array(){
+    Serial.print("[");
+    for(int i=0;i<array_size_;i++){
+      Serial.print(arr[i]);
+      Serial.print(", ");
+    }
+    Serial.println("]");
+  }
+  unsigned long get_average(){
+    return current_sum_ / array_size_;
+  }
+  int get_average_slope(){
+    return current_sum_of_differences_ / array_size_;
+  }
+private:
   unsigned long arr[SMART_ARRAY_SIZE]{0};
   const unsigned int array_size_ = SMART_ARRAY_SIZE;
   unsigned int current_index_ = 0;
-  unsigned long current_sum_ = 0;
+  unsigned long long current_sum_ = 0;
   float current_sum_of_differences_ = 0;
 };
 
@@ -109,11 +161,38 @@ void loop() {
       send_cmd(0x76, MS5xxx_CMD_ADC_READ); // read out values
       read_sensor_value(0x76, value_r);
       right_sensor_is_reading = false;
-      right_history.add_element(value_r);
-//      Serial.println(value_r);
-      Serial.println(right_history.get_average());
+      if(value_r != 0){
+        right_history.add_element(value_r);
 
+        
+        // LP filter
+        int filter_length = 2;
+        long sum = 0;
+        for(int i=0;i<filter_length;i++){
+          sum += right_history.get_element(-i);
+        }
+        
+        Serial.print(sum/filter_length);
+      }
+      Serial.print(" ");
+      Serial.print(right_history.get_average());
+      Serial.print(" ");
+      Serial.print(right_history.get_average() + impactThreshold);
+      Serial.print(" ");
+      Serial.println(right_history.get_average() - releaseThreshold);
+      
+  if(value_r >= (right_history.get_average()+ impactThreshold)){
+  digitalWrite(LED_BUILTIN, 1);
+  //Serial.println("Pressed!");
+  //Serial.println(value_r - right_history.get_average());
   }
+
+  if(value_r + releaseThreshold < (right_history.get_average())){
+  digitalWrite(LED_BUILTIN, 0);
+  //Serial.println("Released!");
+  //Serial.println(right_history.get_average() - value_r);
+  }
+}
 
   if(!left_sensor_is_reading){
       left_sensor_read_start_time = micros();
@@ -139,7 +218,4 @@ void loop() {
   } else if (float(right_history.get_average()) - avg_value < -4000) {
 //    Serial.println("Obstacle removed");
   }
-
-//  delay(100);
-  
 }
