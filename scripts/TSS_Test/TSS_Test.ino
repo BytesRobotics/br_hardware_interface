@@ -1,4 +1,4 @@
-#include <Wire.h> //include I2C communication library
+ #include <Wire.h> //include I2C communication library
 
 int impactThreshold = 3000; //threshold above average sensors value that must be exceeded to count as an impact
 int releaseThreshold = 2500; //threshold below average sensor value that must be crossed to count as a release
@@ -13,7 +13,7 @@ void send_cmd(char addr, byte aCMD)
 {
 	Wire.beginTransmission(addr);
 	Wire.write(aCMD);
-	Wire.endTransmission(true);
+	Wire.endTransmission(true); 
 }
 
 bool sensor_connect(char addr){
@@ -55,50 +55,9 @@ unsigned long left_sensor_read_start_time, right_sensor_read_start_time;
 bool left_sensor_is_reading=false, right_sensor_is_reading=false;
 unsigned long read_delay(550);
 unsigned long value_l=0, value_r=0;
+unsigned long rightImpactTime;
+unsigned long leftImpactTime;
 
-#define INPUT_FILTER_ARRAY_SIZE 10 //array size of 10 for input filter
-
-class InputFilter{ //variant of SmartArray class used to lightly filter the input coming from the barometric pressure sensors
-	public:
-		InputFilter(){}
-		unsigned long get_element(unsigned int index){
-			return arr[(index - current_index_)%array_size_];
-		}
-		void add_element(unsigned long element){
-			current_index_++;
-			current_index_ %= array_size_;
-			current_sum_ -= arr[current_index_];
-			current_sum_of_differences_ -= (float(arr[(current_index_+1)%array_size_]) - arr[current_index_]);
-
-			arr[current_index_] = element;
-
-			current_sum_ += arr[current_index_];
-			current_sum_of_differences_ += (float(arr[current_index_]) - arr[(current_index_-1)%array_size_]); 
-		}
-		unsigned long* get_array(){
-			return arr;
-		}
-		void print_array(){
-			Serial.print("[");
-			for(int i=0;i<array_size_;i++){
-				Serial.print(arr[i]);
-				Serial.print(", ");
-			}
-			Serial.println("]");
-		}
-		unsigned long get_average(){
-			return current_sum_ / array_size_;
-		}
-		int get_average_slope(){
-			return current_sum_of_differences_ / array_size_;
-		}
-	private:
-		unsigned long arr[INPUT_FILTER_ARRAY_SIZE]{0};
-		const unsigned int array_size_ = INPUT_FILTER_ARRAY_SIZE;
-		unsigned int current_index_ = 0;
-		unsigned long long current_sum_ = 0;
-		float current_sum_of_differences_ = 0;
-};
 
 #define SMART_ARRAY_SIZE 2000
 
@@ -136,9 +95,19 @@ class SmartArray{ //array class used to produce running average to compare curre
 		unsigned long get_average(){
 			return current_sum_ / array_size_;
 		}
-		int get_average_slope(){
-			return current_sum_of_differences_ / array_size_;
-		}
+   
+   unsigned long get_filtered_value(int filter_length){
+      unsigned long sum = 0;  
+      for(int i=0;i<filter_length;i++){ //do this code 'filter length' times
+        sum += get_element(-i); //sum = sum + past sensor value(i)
+      }
+      return sum/filter_length;
+   }
+   
+   int get_average_slope(){
+    return current_sum_of_differences_ / array_size_;
+	 }
+   
 	private:
 		unsigned long arr[SMART_ARRAY_SIZE]{0};
 		const unsigned int array_size_ = SMART_ARRAY_SIZE;
@@ -152,15 +121,15 @@ SmartArray right_history, left_history; //creates instance of SmartArray for the
 unsigned long last_avg_update_time= 0;
 unsigned long avg_value = 0;
 
-
 void loop() {  //main loop begins here!!
 
 	/*Flow:
-	  -The right sensor is read, filtered, and average is calculated
-	  -A light filter is applied to the raw baro reading to remove high frequency noise and have a more sensitive system
-	  -Sensor data, running average, impact threshold, and release threshold are printed in a format for the serial plotter. This can be removed eventually to speed up flow
-	  -2 If statments are evaluated: Has the reading gone above the impact threshold or below the release threshold?
-	  -When impact occurs, record system time micros() is saved to rightImpactTime. This will be used to calculate where the impact occured later
+	  1-The right sensor is read, filtered, and average is calculated
+	  2-A light filter is applied to the raw baro reading to remove high frequency noise and have a more sensitive system
+	  3-Sensor data, running average, impact threshold, and release threshold are printed in a format for the serial plotter. This can be removed eventually to speed up flow
+	  4-2 If statments are evaluated: Has the reading gone above the impact threshold or below the release threshold?
+	  5-When impact occurs, record system time micros() is saved to rightImpactTime. This will be used to calculate where the impact occured later
+    Steps 2 - 5 are repeated on the left sensor
 
 	 */
 
@@ -173,40 +142,45 @@ void loop() {  //main loop begins here!!
 		send_cmd(0x76, MS5xxx_CMD_ADC_READ); // read out values
 		read_sensor_value(0x76, value_r); 
 		right_sensor_is_reading = false; //right sensor no longer reading, set variable as such
+		
 		if(value_r != 0){ //"If the sensor reading is NOT zero"
 			right_history.add_element(value_r); //add it the running average array
 
 
 			// LP filter, used for adding light filtering for incoming raw sensor data
 			int filter_length = 2; //number of points the average is action across
-			long sum = 0; //sum use for calulating average
+			long Rightsum = 0; //sum use for calulating average
 			for(int i=0;i<filter_length;i++){ //do this code 'filter length' times
-				sum += right_history.get_element(-i); //sum = sum + past sensor value(i)
+				Rightsum += right_history.get_element(-i); //sum = sum + past sensor value(i)
 			}
-
-			Serial.print(sum/filter_length); //prints average of last two sensor readings
+//      Serial.print(value_r); //straight unfiltered sensor reading
+////			Serial.print(Rightsum/filter_length); //prints average of last two sensor readings
+//      Serial.print(" ");
+//      Serial.println(left_history.get_element(0));
 		}
-		Serial.print(" ");
-		Serial.print(right_history.get_average()); //print running average of last 2000 sensor readings
-		Serial.print(" ");
-		Serial.print(right_history.get_average() + impactThreshold); //prints impact threshold relative to average
-		Serial.print(" ");
-		Serial.println(right_history.get_average() - releaseThreshold); //prints release threshold relative to running average
-
+   
+//		Serial.print(" ");
+//		Serial.print(right_history.get_average()); //print running average of last 2000 sensor readings
+//		Serial.print(" ");
+//		Serial.print(right_history.get_average() + impactThreshold); //prints impact threshold relative to average
+//		Serial.print(" ");
+//		Serial.println(right_history.get_average() - releaseThreshold); //prints release threshold relative to running average
+    
 		if(value_r >= (right_history.get_average()+ impactThreshold)){ //"if the sensor reading is above the impact threshold"
-			rightImpactTime = micros() //store the current system time, used to determine impact location later
-				digitalWrite(LED_BUILTIN, 1); //turn on the onboard LED for fun
+			unsigned long rightImpactTime = micros(); //store the current system time, used to determine impact location later
+				//digitalWrite(LED_BUILTIN, 1); //turn on the onboard LED for fun
 			//Serial.println("Pressed!"); //must be disabled for serial plotter 
 			//Serial.println(value_r - right_history.get_average()); //must be disabled for serial plotter 
 		}
 
 		if(value_r + releaseThreshold < (right_history.get_average())){ //"if the sensor reading is below the release threshold"
-			digitalWrite(LED_BUILTIN, 0); //turn off the onboard LED for fun
+			//digitalWrite(LED_BUILTIN, 0); //turn off the onboard LED for fun
 			//Serial.println("Released!"); //must be disabled for serial plotter
 			//Serial.println(right_history.get_average() - value_r); //must be disabled for serial plotter
 		}
 	}
 
+//steps repeat here for other sensor
 	if(!left_sensor_is_reading){
 		left_sensor_read_start_time = micros();
 		send_cmd(0x77, MS5xxx_CMD_ADC_CONV + MS5xxx_CMD_ADC_D1 + MS5xxx_CMD_ADC_256);
@@ -215,20 +189,33 @@ void loop() {  //main loop begins here!!
 		send_cmd(0x77, MS5xxx_CMD_ADC_READ); // read out values
 		read_sensor_value(0x77, value_l);
 		left_sensor_is_reading = false;
-		//      Serial.println(value_l);
-	}
+		//Serial.println(value_l);
 
-	// every two seconds update reference average
-	if(micros() - last_avg_update_time > 200000){
-		avg_value = right_history.get_average();
-		last_avg_update_time = micros();
-	}
+    if(value_l != 0){ //"If the sensor reading is NOT zero"
+      left_history.add_element(value_l); //add it the running average array
+      Serial.println(left_history.get_filtered_value(2));
+    }
+    
+//    Serial.print(" ");
+//    Serial.print(left_history.get_average()); //print running average of last 2000 sensor readings
+//    Serial.print(" ");
+//    Serial.print(left_history.get_average() + impactThreshold); //prints impact threshold relative to average
+//    Serial.print(" ");
+//    Serial.println(left_history.get_average() - releaseThreshold); //prints release threshold relative to running average
 
-	//  Serial.println(float(right_history.get_average()) - avg_value);
+        if(value_l >= (left_history.get_average()+ impactThreshold)){ //"if the sensor reading is above the impact threshold"
+      unsigned long leftImpactTime = micros(); //store the current system time, used to determine impact location later
+        digitalWrite(LED_BUILTIN, 1); //turn on the onboard LED for fun
+      //Serial.println("Pressed!"); //must be disabled for serial plotter 
+      //Serial.println(value_r - right_history.get_average()); //must be disabled for serial plotter 
+    }
 
-	if(float(right_history.get_average()) - avg_value > 4000){
-		//    Serial.println("Collision");
-	} else if (float(right_history.get_average()) - avg_value < -4000) {
-		//    Serial.println("Obstacle removed");
+    if(value_l + releaseThreshold < (right_history.get_average())){ //"if the sensor reading is below the release threshold"
+      digitalWrite(LED_BUILTIN, 0); //turn off the onboard LED for fun
+      //Serial.println("Released!"); //must be disabled for serial plotter
+      //Serial.println(right_history.get_average() - value_r); //must be disabled for serial plotter
+    }
+    
 	}
-}
+    
+  }
