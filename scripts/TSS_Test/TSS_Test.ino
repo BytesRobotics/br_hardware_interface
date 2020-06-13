@@ -80,9 +80,9 @@ class SmartArray { //array class used to produce running average to compare curr
       current_sum_ += arr[current_index_];
       current_sum_of_differences_ += (float(arr[current_index_]) - arr[(current_index_ - 1) % array_size_]);
     }
-    unsigned long get_element(int index) {
-      return arr[(index + current_index_) % array_size_];
-    }
+    //    unsigned long get_element(int index) {
+    //      return arr[(index + current_index_) % array_size_];
+    //    }
     unsigned long* get_array() {
       return arr;
     }
@@ -205,7 +205,7 @@ void loop() {  //main loop begins here!!
       }
       //Serial.println(leftImpactTime);
       digitalWrite(LED_BUILTIN, 1); //turn on the onboard LED for fun
-      Serial.println((float(rightImpactTime)-leftImpactTime)/10000*343);
+      Serial.println((float(rightImpactTime) - leftImpactTime) / 10000 * 343);
       //Serial.println("Pressed!"); //must be disabled for serial plotter
       //Serial.println(value_r - right_history.get_average()); //must be disabled for serial plotter
     }
