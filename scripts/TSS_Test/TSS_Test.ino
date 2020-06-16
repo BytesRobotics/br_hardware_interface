@@ -67,7 +67,7 @@ class SmartArray { //array class used to produce running average to compare curr
   public:
     SmartArray() {}
     unsigned long get_element(unsigned int index) {
-      return arr[(index - current_index_) % array_size_];
+      return arr[(index + current_index_)  % array_size_];
     }
     void add_element(unsigned long element) {
       current_index_++;
@@ -147,15 +147,15 @@ void loop() {  //main loop begins here!!
 
     if (value_r != 0) { //"If the sensor reading is NOT zero"
       right_history.add_element(value_r); //add it the running average array
-      //      Serial.print(right_history.get_filtered_value(2));
+            Serial.print(right_history.get_filtered_value(2));
     }
 
-    //    Serial.print(" ");
-    //    Serial.print(right_history.get_average()); //print running average of last 2000 sensor readings
-    //    Serial.print(" ");
-    //    Serial.print(right_history.get_average() + impactThreshold); //prints impact threshold relative to average
-    //    Serial.print(" ");
-    //    Serial.print(right_history.get_average() - releaseThreshold); //prints release threshold relative to running average
+        Serial.print(" ");
+        Serial.print(right_history.get_average()); //print running average of last 2000 sensor readings
+        Serial.print(" ");
+        Serial.print(right_history.get_average() + impactThreshold); //prints impact threshold relative to average
+        Serial.print(" ");
+        Serial.print(right_history.get_average() - releaseThreshold); //prints release threshold relative to running average
 
     if (right_history.get_filtered_value(2) >= (right_history.get_average() + impactThreshold)) { //"if the sensor reading is above the impact threshold"
       if ((micros() - rightlastDebounceTime) > debounceDelay) {
@@ -187,16 +187,16 @@ void loop() {  //main loop begins here!!
 
     if (value_l != 0) { //"If the sensor reading is NOT zero"
       left_history.add_element(value_l); //add it the running average array
-      //      Serial.print(" ");
-      //      Serial.print(left_history.get_filtered_value(2));
+            Serial.print(" ");
+            Serial.print(left_history.get_filtered_value(2));
     }
 
-    //    Serial.print(" ");
-    //    Serial.print(left_history.get_average()); //print running average of last 2000 sensor readings
-    //    Serial.print(" ");
-    //    Serial.print(left_history.get_average() + impactThreshold); //prints impact threshold relative to average
-    //    Serial.print(" ");
-    //    Serial.println(left_history.get_average() - releaseThreshold); //prints release threshold relative to running average
+        Serial.print(" ");
+        Serial.print(left_history.get_average()); //print running average of last 2000 sensor readings
+        Serial.print(" ");
+        Serial.print(left_history.get_average() + impactThreshold); //prints impact threshold relative to average
+        Serial.print(" ");
+        Serial.println(left_history.get_average() - releaseThreshold); //prints release threshold relative to running average
 
     if (left_history.get_filtered_value(2) > (left_history.get_average() + impactThreshold)) { //"if the sensor reading is above the impact threshold"
       if ((micros() - leftlastDebounceTime) > debounceDelay) { //impact debounce
@@ -205,7 +205,7 @@ void loop() {  //main loop begins here!!
       }
       //Serial.println(leftImpactTime);
       digitalWrite(LED_BUILTIN, 1); //turn on the onboard LED for fun
-      Serial.println((float(rightImpactTime) - leftImpactTime) / 10000 * 343);
+      //Serial.println((float(rightImpactTime) - leftImpactTime) / 10000 * 343);
       //Serial.println("Pressed!"); //must be disabled for serial plotter
       //Serial.println(value_r - right_history.get_average()); //must be disabled for serial plotter
     }
@@ -216,4 +216,5 @@ void loop() {  //main loop begins here!!
       //Serial.println(right_history.get_average() - value_r); //must be disabled for serial plotter
     }
   }
+  delay(1);
 }
