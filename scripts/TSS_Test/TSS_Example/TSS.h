@@ -13,7 +13,7 @@ Based around the MS5607-02BA03 barometric pressure sensor: https://www.te.com/co
 //definitions of values used to talk to barometric pressure sensors
 #define MS5xxx_CMD_RESET    0x1E    // perform reset
 #define MS5xxx_CMD_ADC_READ 0x00    // initiate read sequence
-#define MS5xxx_CMD_ADC_CONV 0x40    // start conversion
+#define MS5xxx_CMD_ADC_CONV 0x40    // start conversion    
 #define MS5xxx_CMD_ADC_D1   0x00    // read ADC 1
 #define MS5xxx_CMD_ADC_256  0x00    // set ADC oversampling ratio to 256
 #define SMART_ARRAY_SIZE 2000		//Defines the smart array size. Temporary implementation
@@ -30,14 +30,15 @@ class TSS
 		bool sensor_connect(char addr);
 		void read_sensor_value(char addr, unsigned long& value);
 		bool init_sensor(char addr); //initialize sensor, include I2C address in brackets
-		bool right_newval(unsigned long value_r);
+		bool right_newval();
+		unsigned long filter_rightval();
 	private:
 		int _impactThreshold = 3000; //threshold above average sensors value that must be exceeded to count as an impact
 		int _releaseThreshold = 2500; //threshold below average sensor value that must be crossed to count as a release
-		unsigned long left_sensor_read_start_time, right_sensor_read_start_time;  //values to hold system time that sensors began reading
+		unsigned long left_sensor_read_start_time = 0, right_sensor_read_start_time = 0;  //values to hold system time that sensors began reading
 		bool left_sensor_is_reading = false, right_sensor_is_reading = false; //bools to track when sensors are reading
 		unsigned long read_delay = 530; //time to wait for the sensor to take reading before asing for data
-		unsigned long private_value_l = 0, private_value_r = 0; //raw values coming off sensors
+		unsigned long value_l = 0, value_r = 0; //raw values coming off sensors
 		unsigned long rightImpactTime; //system time at which the sensors are impacted
 		unsigned long leftImpactTime;
 		long debounceDelay = 100000; //debounce time to wait for pressure to fall below impact threshold
@@ -45,24 +46,5 @@ class TSS
 		long leftlastDebounceTime = 0;
 		bool impact = false; //not currently used
 };
-
-class SmartArray //A neat custom array class Micheal wrote to make our running average less computationally-intensive
-{
-	public:
-		SmartArray() {}
-		unsigned long get_element(unsigned int index);
-		void add_element(unsigned long element);
-		unsigned long* get_array();
-		unsigned long get_average();
-		unsigned long get_filtered_value(int filter_length);
-		
-	private:
-		unsigned long arr[SMART_ARRAY_SIZE] {0};
-		const unsigned int array_size_ = SMART_ARRAY_SIZE;
-		unsigned int current_index_ = 0;
-		unsigned long long current_sum_ = 0;
-		float current_sum_of_differences_ = 0;
-};
-
 #endif
 #endif
