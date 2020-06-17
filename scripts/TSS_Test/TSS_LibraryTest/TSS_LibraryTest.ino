@@ -1,6 +1,8 @@
 #include "TSS.h"
 #include "Wire.h"
 TSS tube;
+unsigned long start = 0;
+unsigned long stoptime = 0;
 void setup()
 {
   Serial.begin(115200);
@@ -8,18 +10,17 @@ void setup()
   Wire.setClock(400000);  //sets I2C speed
   while (!Serial);        //Wait for serial to begin
 
-
   ///initialize right and left sensors
   tube.init_sensor(0x77);
   tube.init_sensor(0x76);
 
-  tube.setImpactThreshold(4000);//sets how much the pressure has to increase before an impact event is triggered
+  tube.setImpactThreshold(3000);//sets how much the pressure has to increase before an impact event is triggered
   tube.setReleaseThreshold(2500);//sets how much the pressure has to decrease before a release event is triggered
 
 }
 
-void graph_it(){
-    if (tube.right_newval()) //if there's a new sensor value...
+void graph_it() {
+  if (tube.right_newval()) //if there's a new sensor value...
   {
     Serial.println(tube.filter_rightval());  //print the filtered value to remove some noise
     Serial.print("  "); //spaces for the serial plotter
@@ -47,6 +48,10 @@ void graph_it(){
 
 void loop()
 {
-  graph_it(); //open the serial plotter, it's pretty cool!!
-  if(tube.filter_rightval() > 
+  stoptime = micros();
+  Serial.println(stoptime - start);
+  start = micros();
+  //graph_it();
+  if (tube.l_impact() && tube.r_impact()) {
+  }
 }

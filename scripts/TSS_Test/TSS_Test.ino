@@ -158,7 +158,7 @@ void loop() {  //main loop begins here!!
         Serial.print(right_history.get_average() - releaseThreshold); //prints release threshold relative to running average
 
     if (right_history.get_filtered_value(2) >= (right_history.get_average() + impactThreshold)) { //"if the sensor reading is above the impact threshold"
-      if ((micros() - rightlastDebounceTime) > debounceDelay) {
+      if ((micros() - rightlastDebounceTime) > debounceDelay) { //if the current system time minus the last bounce is longer than the delay
         rightImpactTime = micros(); //store the current system time, used to determine impact location later
         rightlastDebounceTime = micros();
       }
