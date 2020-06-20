@@ -46,12 +46,31 @@ void graph_it() {
   }
 }
 
+void effiecient_graph(){
+  if (tube.baro_read()) //if there's a new sensor value...
+  {
+    Serial.println(tube.filter_rightval());  //print the filtered value to remove some noise
+    Serial.print("  "); //spaces for the serial plotter
+    Serial.print(tube.right_getaverage()); //print running average
+    Serial.print("  ");
+    Serial.print(tube.rightimpactThreshold()); //print trigger value
+    Serial.print("  ");
+    Serial.print(tube.rightreleaseThreshold()); //print trigger value
+    Serial.print("  ");
+    Serial.print(tube.filter_leftval());
+    Serial.print("  ");
+    Serial.print(tube.left_getaverage());
+    Serial.print("  ");
+    Serial.print(tube.leftimpactThreshold());
+    Serial.print("  ");
+    Serial.print(tube.leftreleaseThreshold());
+    Serial.print("  ");
+
+  }
+}
+
 void loop()
 {
-  stoptime = micros();
-  Serial.println(stoptime - start);
-  start = micros();
   //graph_it();
-  if (tube.l_impact() && tube.r_impact()) {
-  }
+  effiecient_graph();
 }

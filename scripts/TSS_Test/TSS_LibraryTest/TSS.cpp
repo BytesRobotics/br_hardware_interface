@@ -146,6 +146,25 @@ bool TSS::left_newval() {
   }
 }
 
+bool TSS::baro_read() {
+  if (!reading) {
+    sensor_read_start_time = micros(); //record the current system time as the time the sensors began reading
+    send_cmd(0x76, MS5xxx_CMD_ADC_CONV + MS5xxx_CMD_ADC_D1 + MS5xxx_CMD_ADC_256); //send command to start reading right sensor
+    send_cmd(0x77, MS5xxx_CMD_ADC_CONV + MS5xxx_CMD_ADC_D1 + MS5xxx_CMD_ADC_256); //read left sensor
+    reading = true; //sensors have now been told to start reading
+    return false; //new value is not ready yet, we have to wait for the sensor to work it's magic
+  } else if ((micros() - sensor_read_start_time) > read_delay) {
+    send_cmd(0x76, MS5xxx_CMD_ADC_READ); // read out values
+    send_cmd(0x77, MS5xxx_CMD_ADC_READ);
+    read_sensor_value(0x77, value_l); //store the values into variables
+    read_sensor_value(0x76, value_r);
+    left.add_element(value_l); //add values to running average array
+    right.add_element(value_r);
+    reading = false; //sensors are no longer reading
+    return true; //new values have been recorded
+  }
+}
+
 unsigned long TSS::filter_rightval() {
   return right.get_filtered_value(2);
 }

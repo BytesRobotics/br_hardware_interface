@@ -29,6 +29,7 @@ class TSS
     bool sensor_connect(char addr);
     void read_sensor_value(char addr, unsigned long& value);
     bool init_sensor(char addr); //initialize sensor, include I2C address in brackets
+    bool baro_read(); //reads both sensors in rapid succession
     bool right_newval();
     bool left_newval();
     unsigned long filter_rightval();
@@ -46,9 +47,9 @@ class TSS
   private:
     int _impactThreshold; //threshold above average sensors value that must be exceeded to count as an impact
     int _releaseThreshold; //threshold below average sensor value that must be crossed to count as a release
-    unsigned long left_sensor_read_start_time = 0, right_sensor_read_start_time = 0;  //values to hold system time that sensors began reading
-    bool left_sensor_is_reading = false, right_sensor_is_reading = false; //bools to track when sensors are reading
-    unsigned long read_delay = 550; //time to wait for the sensor to take reading before asking for data
+    unsigned long sensor_read_start_time = 0, left_sensor_read_start_time = 0, right_sensor_read_start_time = 0;  //values to hold system time that sensors began reading
+    bool reading = false, left_sensor_is_reading = false, right_sensor_is_reading = false; //bools to track when sensors are reading
+    unsigned long read_delay = 1000; //time to wait for the sensor to take reading before asking for data
     unsigned long value_l = 0, value_r = 0; //raw values coming off sensors
     unsigned long rightImpactTime; //system time at which the sensors are impacted
     unsigned long leftImpactTime;
