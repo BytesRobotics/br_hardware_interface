@@ -7,6 +7,12 @@
 // https://howtomechatronics.com/tutorials/arduino/ultrasonic-sensor-hc-sr04/
 // https://www.avdweb.nl/arduino/samd21/virus
 
+//Steps to initialize additional interrupts:
+//CLK_EIC_APB = 0x21; //Enable CLK_EIC_APB
+//Enable GCLK_EIC (if we need edge detection or filtering)
+//Write the EIC configuration registers(EVCCTRL, WAKEUP, CONFIGy)
+//Enable EIC
+
 // Allows us to get byte array from float which is important for data transmission
 typedef union
 {
@@ -14,10 +20,13 @@ typedef union
  uint8_t bytes[4];
 } FLOATUNION_t;
 
+//Interupts need to be configured to add 2 more for wheel encoders.
+//File path for arduino SAMD21 files: C:\Users\Gavin Remme\AppData\Local\Arduino15\packages\arduino\hardware\samd
+
 
 // GPS config
 // https://github.com/adafruit/Adafruit_GPS/blob/master/Adafruit_GPS.h
-#define GPSSerial Serial1
+#define GPSSerial Serial
 Adafruit_GPS GPS(&GPSSerial);
 
 
@@ -26,20 +35,24 @@ Adafruit_GPS GPS(&GPSSerial);
 #define trig_pin 7 //only one trig pin that will handle all the sensors (PWM freq will be 1/period with dutycycle equivalent to 10us) period = timeout length
 // PWM pin 2 is PA10 TCC1-W0/TCC0-W2
 #define dist_timeout = 24000 //~400CM/4M max distance (time in microseconds) - 24ms - 41.67Hz - NOT Used in current implementation
-// Echo pins for the 5 onboard distance sensors
-#define front_dist_pin 0  //CH1
-#define left_dist_pin 1   //CH2 45 degree offset from front (absolute min = 15)
-#define right_dist_pin 6  //CH3 45 degree offset from front
-#define rear_dist_pin 8   //CH4
-#define bottom_dist_pin 9 //CH5
-
+// Echo pins for the 8 onboard distance sensors, labeled Ch1-CH8, use pins 0,1,4,5,6,7,8,9,A1,A2 for interrupts 
+#define CH0 11  //Pins for ultrasonic sensors, this one is PA16 in the uM
+#define CH1 13 //PA17
+#define CH2 A5 //PB02
+#define CH3 12 //PA19
+#define CH4 A3 //PA04  
+#define CH5 A4 //PA05
+#define CH6 8 //PA06
+#define CH7 9 //PA07
+#define CH8 A1 //PB08
+#define CH9 A2 //PB09
 
 // Definitions for the rotary encoder
 // https://youtu.be/V1txmR8GXzE
-#define left_wheel_encoder_a_pin A1
-#define left_wheel_encoder_b_pin 10
-#define right_wheel_encoder_a_pin A2
-#define right_wheel_encoder_b_pin 11
+#define left_wheel_encoder_a_pin 2 //PA10
+#define left_wheel_encoder_b_pin 4 //PA08
+#define right_wheel_encoder_a_pin 24 //PB11
+#define right_wheel_encoder_b_pin 5 //PA15
 #define encoder_counts_per_revolution = 374 // Not used in current implementation
 
 // count the total number of pulses since the start of tracking
@@ -48,17 +61,17 @@ volatile long right_wheel_pulses = 0;
 
 
 // Control config
-#define left_wheel_speed_pin 4
+#define left_wheel_speed_pin 6 //PA20
 int left_wheel_cmd = 0;
-#define left_wheel_dir_pin 2
+#define left_wheel_dir_pin 38 //PA13
 
-#define right_wheel_speed_pin 5
+#define right_wheel_speed_pin 10 //PA18
 int right_wheel_cmd = 0;
-#define right_wheel_dir_pin 3
+#define right_wheel_dir_pin 3 //PA09
 
 int head_servo_cmd = 0;
 Servo head_servo;
-#define head_servo_pin 12
+//#define head_servo_pin 12 //no servo on bytes 
 
 //For serial event
 const int packetLength = 7;         //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|head servo MSB|head servo LSB|
@@ -85,6 +98,11 @@ const int outGoingPacketLength = 40;
 // |PEC|
 
 // For reading the controller
+
+volatile unsigned long ch_0_rising, ch0_duty_cycle;
+void ch0_rising_interrupt();
+void ch0_falling_interrupt();
+
 volatile unsigned long ch_1_rising, ch1_duty_cycle;
 void ch1_rising_interrupt();
 void ch1_falling_interrupt();
@@ -104,6 +122,23 @@ void ch4_falling_interrupt();
 volatile unsigned long ch_5_rising, ch5_duty_cycle;
 void ch5_rising_interrupt();
 void ch5_falling_interrupt();
+
+volatile unsigned long ch_6_rising, ch6_duty_cycle;
+void ch6_rising_interrupt();
+void ch6_falling_interrupt();
+
+volatile unsigned long ch_7_rising, ch7_duty_cycle;
+void ch7_rising_interrupt();
+void ch7_falling_interrupt();
+
+volatile unsigned long ch_8_rising, ch8_duty_cycle;
+void ch8_rising_interrupt();
+void ch8_falling_interrupt();
+
+volatile unsigned long ch_9_rising, ch9_duty_cycle;
+void ch9_rising_interrupt();
+void ch9_falling_interrupt();
+
 
 //Function for converting input (-1000 to 1000) to microseconds (1000 to 2000)
 inline int calculateHardwareValues(int input) {
@@ -136,28 +171,38 @@ void setup() {
   pinMode(right_wheel_speed_pin, OUTPUT);
   pinMode(right_wheel_dir_pin, OUTPUT);
 
-  head_servo.attach(head_servo_pin);
-  head_servo.writeMicroseconds(1500); //Set servo to zero position
+  //head_servo.attach(head_servo_pin);
+  //head_servo.writeMicroseconds(1500); //Set servo to zero position
 
   //define pin functions for the distance sensors
   pinMode(trig_pin, OUTPUT);
-  pinMode(front_dist_pin, INPUT);
-  pinMode(left_dist_pin, INPUT);
-  pinMode(right_dist_pin, INPUT);
-  pinMode(rear_dist_pin, INPUT);
-  pinMode(bottom_dist_pin, INPUT);
-  
-  attachInterrupt(digitalPinToInterrupt(front_dist_pin), ch1_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(left_dist_pin), ch2_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(right_dist_pin), ch3_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(rear_dist_pin), ch4_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(bottom_dist_pin), ch5_rising_interrupt, RISING);  
+  pinMode(CH0, INPUT);
+  pinMode(CH1, INPUT);
+  pinMode(CH2, INPUT);
+  pinMode(CH3, INPUT);
+  pinMode(CH4, INPUT);
+  pinMode(CH5, INPUT);
+  pinMode(CH6, INPUT);
+  pinMode(CH7, INPUT);
+  pinMode(CH8, INPUT);
+  pinMode(CH9, INPUT);
+
+  attachInterrupt(digitalPinToInterrupt(CH0), ch0_rising_interrupt, RISING); 
+  attachInterrupt(digitalPinToInterrupt(CH1), ch1_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH2), ch2_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH3), ch3_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH4), ch4_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH5), ch5_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH6), ch6_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH7), ch7_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH8), ch8_rising_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(CH9), ch9_rising_interrupt, RISING);
 
   //Start distance sensing
   config_pwm(); //Start PWM pulses on pin 7 to control trigger pins on ultrasonic sensors
 
   //Other pin setup
-  pinMode(LED_BUILTIN, OUTPUT);
+  //pinMode(LED_BUILTIN, OUTPUT);
 
   //Start GPS unit
   // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
@@ -178,24 +223,45 @@ void setup() {
   GPS.sendCommand(PMTK_ENABLE_SBAS);
   GPS.sendCommand(PMTK_ENABLE_WAAS);
 
-  while (!Serial); //Wait to connect to computer
+  while (!SerialUSB); //Wait to connect to computer
 
   lastPacket = millis(); //start watchdog timer for the first packet
 
 }
 
 void loop() {
- // Serial.println("CH1: " + String(ch1_duty_cycle) + " CH2: " + String(ch2_duty_cycle) + " CH3: " + String(ch3_duty_cycle) + " CH4: " + String(ch4_duty_cycle) + " CH5: " + String(ch5_duty_cycle));
+ //SerialUSB.println("CH1: " + String(ch1_duty_cycle) + " CH2: " + String(ch2_duty_cycle) + " CH3: " + String(ch3_duty_cycle) + " CH4: " + String(ch4_duty_cycle));
+ //SerialUSB.println("CH5: " + String(ch5_duty_cycle) + " CH6: " + String(ch6_duty_cycle) + " CH7: " + String(ch7_duty_cycle) + " CH8: " + String(ch8_duty_cycle));
+ SerialUSB.println("CH0: " + String(ch0_duty_cycle));
+ SerialUSB.println("CH1: " + String(ch1_duty_cycle));
+ SerialUSB.println("CH2: " + String(ch2_duty_cycle));
+ SerialUSB.println("CH3: " + String(ch3_duty_cycle));
+ SerialUSB.println("CH4: " + String(ch4_duty_cycle));
+ SerialUSB.println("CH5: " + String(ch5_duty_cycle));
+ SerialUSB.println("CH6: " + String(ch6_duty_cycle));
+ SerialUSB.println("CH7: " + String(ch7_duty_cycle));
+ SerialUSB.println("CH8: " + String(ch8_duty_cycle));
+ SerialUSB.println("CH9: " + String(ch9_duty_cycle));
+ SerialUSB.println("Wheel position: " + String(right_wheel_pulses));
+ SerialUSB.println();
+
+
+ /*&if((ch1_duty_cycle && ch2_duty_cycle && ch3_duty_cycle && ch4_duty_cycle && ch5_duty_cycle && ch6_duty_cycle && ch7_duty_cycle && ch7_duty_cycle) == 0) //test to see that all sensors are working
+ {
+  SerialUSB.println("One or more sensors are reading a value of zero!");
+ }
+ */
+ delay(50);
 
   now = millis();//get current time to  ensure connection to main contorller
 
-  if (wdt_isTripped || now - lastPacket > 500) { //If the contorller hasn't recived a new packet in half a second (short circuit limits calcs)
+  if (wdt_isTripped || now - lastPacket > 500) { //If the controller hasn't recived a new packet in half a second (short circuit limits calcs)
 
     left_wheel_cmd = 0;
     right_wheel_cmd = 0;
 
     if (wdt_isTripped == false) {
-      Serial.println("Drive controller watchdog tripped!");
+      //SerialUSB.println("Drive controller watchdog tripped!");
     }
     wdt_isTripped = true;
   }
@@ -207,12 +273,12 @@ void loop() {
     right_wheel_cmd = calculateHardwareValues(twosComp((packet[3] << 8) | packet[2]));
     head_servo_cmd = constrain(map(twosComp((packet[1] << 8) | packet[0]), -1000, 1000, 1000, 2000), 1000, 2000);
 
-    //      Serial.println(packet, BIN);      //DEBUG
+    //      SerialUSB.println(packet, BIN);      //DEBUG
     //
-    //      Serial.println(left_wheel_cmd, BIN); //DEBUG
-    //      Serial.println(left_wheel_cmd);      //DEBUG
-    //      Serial.println(right_wheel_cmd, BIN); //DEBUG
-    //      Serial.println(right_wheel_cmd);      //DEBUG
+    //      SerialUSB.println(left_wheel_cmd, BIN); //DEBUG
+    //      SerialUSB.println(left_wheel_cmd);      //DEBUG
+    //      SerialUSB.println(right_wheel_cmd, BIN); //DEBUG
+    //      SerialUSB.println(right_wheel_cmd);      //DEBUG
 
     lastPacket = millis(); //Pet the watchdog timer
     wdt_isTripped = false;
@@ -273,6 +339,7 @@ void loop() {
     longitude.number = GPS.longitudeDegrees;
     FLOATUNION_t hdop; //horizontal dilution of precision for variance calculation and debugging
     hdop.number = GPS.HDOP;
+    SerialUSB.println(latitude.number);
     
     outGoingPacket[18] = (byte)(latitude.bytes[0]);
     outGoingPacket[19] = (byte)(latitude.bytes[1]);
@@ -305,10 +372,10 @@ void loop() {
     for(int i=1; i<outGoingPacketLength-1;i++){PEC ^= outGoingPacket[i];}
     outGoingPacket[outGoingPacketLength-1] = PEC;
 
-    Serial.write(outGoingPacket, outGoingPacketLength);
+    //SerialUSB.write(outGoingPacket, outGoingPacketLength);
   }
 
-  if (Serial.available() > 0) {
+  if (SerialUSB.available() > 0) {
     serialEvent();
   } else {
     digitalWrite(LED_BUILTIN, LOW);
@@ -320,7 +387,7 @@ void serialEvent() {
   byte pecVal = 0; //for Packet Error Checking
 
   for (int i = 0; i < packetLength; i++) {
-    packet[i] = static_cast<byte>(Serial.read()); //Never ever use readBytes()
+    packet[i] = static_cast<byte>(SerialUSB.read()); //Never ever use readBytes()
     if (i < packetLength-1) {
       pecVal = pecVal ^ packet[i]; //XOR with incomming byte
     }
@@ -335,8 +402,8 @@ void serialEvent() {
   }
   else
   {
-    while (Serial.available()) {
-      Serial.read(); //Clear the Serial input buffer
+    while (SerialUSB.available()) {
+      SerialUSB.read(); //Clear the Serial input buffer
     }
     // clear the packet:
     for (int i = 0; i < packetLength; i++) {
