@@ -216,5 +216,4 @@ void loop() {  //main loop begins here!!
       //Serial.println(right_history.get_average() - value_r); //must be disabled for serial plotter
     }
   }
-  delay(1);
 }
