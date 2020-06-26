@@ -1,6 +1,8 @@
 #include "Arduino.h"
 #include "TSS.h"
 #include <Wire.h>
+#define serial SerialUSB //uncomment one of these depending on what serial command the board uses
+//#define serial Serial
 
 //class SmartArray is put int the .cpp because it only needs to be accessed internally by the library
 //and not by the end user
@@ -48,6 +50,35 @@ class SmartArray { //array class used to produce running average to compare curr
 };
 
 SmartArray left, right; //two instances of the SmartArray to handle the left and right sensors
+
+void TSS::graph()
+{
+  if (right_newval()) //if there's a new sensor value...
+  {
+    serial.println(filter_rightval());  //print the filtered value to remove some noise
+    serial.print("  "); //spaces for the serial plotter 
+    serial.print(right_getaverage()); //print running average
+    serial.print("  ");
+    serial.print(rightimpactThreshold()); //print trigger value
+    serial.print("  ");
+    serial.print(rightreleaseThreshold()); //print trigger value
+    serial.print("  ");
+  }
+
+  if (left_newval())
+  {
+    serial.print(filter_leftval());
+    serial.print("  ");
+    serial.print(left_getaverage());
+    serial.print("  ");
+    serial.print(leftimpactThreshold());
+    serial.print("  ");
+    serial.print(leftreleaseThreshold());
+    serial.print("  ");
+
+  }
+  return;
+}
 
 bool TSS::r_impact()
 {

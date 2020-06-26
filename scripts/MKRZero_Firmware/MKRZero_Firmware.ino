@@ -49,6 +49,9 @@ Adafruit_GPS GPS(&GPSSerial);
 #define CH7 9 //PA07
 #define CH8 A1 //PB08
 #define CH9 A2 //PB09
+/*#define CH10
+  #define CH11
+*/
 
 // Definitions for the rotary encoder
 // https://youtu.be/V1txmR8GXzE
@@ -142,6 +145,10 @@ volatile unsigned long ch_9_rising, ch9_duty_cycle;
 void ch9_rising_interrupt();
 void ch9_falling_interrupt();
 
+void left_wheel_encoder_interrupt();
+void right_wheel_encoder_interrupt();
+
+void config_pwm();
 
 //Function for converting input (-1000 to 1000) to microseconds (1000 to 2000)
 inline int calculateHardwareValues(int input) {
@@ -246,35 +253,28 @@ void setup() {
 }
 
 void loop() {
-  //SerialUSB.println("CH1: " + String(ch1_duty_cycle) + " CH2: " + String(ch2_duty_cycle) + " CH3: " + String(ch3_duty_cycle) + " CH4: " + String(ch4_duty_cycle));
-  //SerialUSB.println("CH5: " + String(ch5_duty_cycle) + " CH6: " + String(ch6_duty_cycle) + " CH7: " + String(ch7_duty_cycle) + " CH8: " + String(ch8_duty_cycle));
-  SerialUSB.println("CH0: " + String(ch0_duty_cycle));
-  SerialUSB.println("CH1: " + String(ch1_duty_cycle));
-  SerialUSB.println("CH2: " + String(ch2_duty_cycle));
-  SerialUSB.println("CH3: " + String(ch3_duty_cycle));
-  SerialUSB.println("CH4: " + String(ch4_duty_cycle));
-  SerialUSB.println("CH5: " + String(ch5_duty_cycle));
-  SerialUSB.println("CH6: " + String(ch6_duty_cycle));
-  SerialUSB.println("CH7: " + String(ch7_duty_cycle));
-  SerialUSB.println("CH8: " + String(ch8_duty_cycle));
-  SerialUSB.println("CH9: " + String(ch9_duty_cycle));
-  SerialUSB.println("Wheel position: " + String(right_wheel_pulses));
-  SerialUSB.println();
+  //
+  //  if (tube.l_impact() == true) {
+  //    SerialUSB.println("left impact");
+  //  }
 
+//  if (tube.r_impact()) {
+    //SerialUSB.println("impact");
+    SerialUSB.println("CH0: " + String(ch0_duty_cycle));
+    SerialUSB.println("CH1: " + String(ch1_duty_cycle));
+    SerialUSB.println("CH2: " + String(ch2_duty_cycle));
+    SerialUSB.println("CH3: " + String(ch3_duty_cycle));
+    SerialUSB.println("CH4: " + String(ch4_duty_cycle));
+    SerialUSB.println("CH5: " + String(ch5_duty_cycle));
+    SerialUSB.println("CH6: " + String(ch6_duty_cycle));
+    SerialUSB.println("CH7: " + String(ch7_duty_cycle));
+    SerialUSB.println("CH8: " + String(ch8_duty_cycle));
+    SerialUSB.println("CH9: " + String(ch9_duty_cycle));
+    SerialUSB.println("Wheel position: " + String(right_wheel_pulses));
+    SerialUSB.println();
+ // }
 
-  /*&if((ch1_duty_cycle && ch2_duty_cycle && ch3_duty_cycle && ch4_duty_cycle && ch5_duty_cycle && ch6_duty_cycle && ch7_duty_cycle && ch7_duty_cycle) == 0) //test to see that all sensors are working
-    {
-    SerialUSB.println("One or more sensors are reading a value of zero!");
-    }
-  */
-  delay(50);
-
-  now = millis();//get current time to  ensure connection to main contorller
-
-  if (tube.r_impact() || tube.l_impact()) {
-    Serial.print("Impact!");
-  }
-
+  now = millis(); //get current time to  ensure connection to main controller
 
   if (wdt_isTripped || now - lastPacket > 500) { //If the contorller hasn't recived a new packet in half a second (short circuit limits calcs)
     left_wheel_cmd = 0;
@@ -359,7 +359,7 @@ void loop() {
     longitude.number = GPS.longitudeDegrees;
     FLOATUNION_t hdop; //horizontal dilution of precision for variance calculation and debugging
     hdop.number = GPS.HDOP;
-   
+
     outGoingPacket[18] = (byte)(latitude.bytes[0]);
     outGoingPacket[19] = (byte)(latitude.bytes[1]);
     outGoingPacket[20] = (byte)(latitude.bytes[2]);
@@ -408,13 +408,10 @@ void serialEvent() {
   byte pecVal = 0; //for Packet Error Checking
 
   for (int i = 0; i < packetLength; i++) {
-    <<< <<< < HEAD
     packet[i] = static_cast<byte>(Serial.read()); //Never ever use readBytes()
     if (i < packetLength - 1) {
-      == == == =
-        packet[i] = static_cast<byte>(SerialUSB.read()); //Never ever use readBytes()
+      packet[i] = static_cast<byte>(SerialUSB.read()); //Never ever use readBytes()
       if (i < packetLength - 1) {
-        >>> >>> > 6331d38cbd0722576e13f7d876412c8455a99688
         pecVal = pecVal ^ packet[i]; //XOR with incomming byte
       }
       delayMicroseconds(1000); //Wait to finish adding the incomming byte to the buffer before reading it
@@ -437,3 +434,4 @@ void serialEvent() {
       }
     }
   }
+}

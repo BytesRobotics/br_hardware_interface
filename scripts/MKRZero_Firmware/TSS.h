@@ -45,6 +45,7 @@ class TSS
     long leftlastDebounceTime = 0;    
     unsigned long rightImpactTime; //system time at which the sensors are impacted
     unsigned long leftImpactTime;
+    void graph();
   private:
     int _impactThreshold; //threshold above average sensors value that must be exceeded to count as an impact
     int _releaseThreshold; //threshold below average sensor value that must be crossed to count as a release
