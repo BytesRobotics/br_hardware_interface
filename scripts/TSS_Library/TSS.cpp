@@ -51,7 +51,7 @@ SmartArray left, right; //two instances of the SmartArray to handle the left and
 
 bool TSS::r_impact()
 {
-  baro_read();
+  right_newval();
   if ((filter_rightval() > rightimpactThreshold()) && ((micros() - rightlastDebounceTime) > debounceDelay))
   {
     rightlastDebounceTime = micros(); //store system time for next time
@@ -63,7 +63,7 @@ bool TSS::r_impact()
 
 bool TSS::l_impact()
 {
-  baro_read();
+  left_newval();
   if ((filter_leftval() > leftimpactThreshold()) && ((micros() - leftlastDebounceTime) > debounceDelay))
   {
     leftlastDebounceTime = micros(); //store system time for next time
@@ -147,22 +147,6 @@ bool TSS::left_newval() {
       return true;
     }
   }
-}
-
-bool TSS::baro_read() { //quickest way to update values from both sensors at once
-  if ((micros() - sensor_read_start_time) > read_delay) {
-    send_cmd(0x76, MS5xxx_CMD_ADC_READ); // read out values
-    send_cmd(0x77, MS5xxx_CMD_ADC_READ);
-    read_sensor_value(0x76, value_l); //store the values into variables
-    read_sensor_value(0x77, value_r);
-    left.add_element(value_l); //add values to running average array
-    right.add_element(value_r);
-    sensor_read_start_time  = micros(); //record the current system time as the time the sensors began reading
-    send_cmd(0x76, MS5xxx_CMD_ADC_CONV + MS5xxx_CMD_ADC_D1 + MS5xxx_CMD_ADC_256); //send command to start reading right sensor
-    send_cmd(0x77, MS5xxx_CMD_ADC_CONV + MS5xxx_CMD_ADC_D1 + MS5xxx_CMD_ADC_256); //read left sensor
-    return true; //new values have been recorded
-  }
-  return false;
 }
 
 unsigned long TSS::filter_rightval() {
