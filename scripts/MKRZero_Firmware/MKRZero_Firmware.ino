@@ -29,9 +29,8 @@ typedef union
 
 // GPS config
 // https://github.com/adafruit/Adafruit_GPS/blob/master/Adafruit_GPS.h
-#define GPSSerial Serial
+//#define GPSSerial Serial1
 Adafruit_GPS GPS(&GPSSerial);
-
 
 // Distance sensor config
 // The ultrasonic sensors require a 10 micro-second pulse to trigger every `timeout length seconds`
@@ -168,6 +167,7 @@ inline int twosComp(int input) {
 void setup() {
   Wire.begin(); //begin I2C communication for TSS
   Wire.setClock(400000);
+  Serial.begin(115200);
 
   //initialize right and left sensors
   tube.init_sensor(0x77);
@@ -246,7 +246,7 @@ void setup() {
   GPS.sendCommand(PMTK_ENABLE_SBAS);
   GPS.sendCommand(PMTK_ENABLE_WAAS);
 
-  while (!SerialUSB); //Wait to connect to computer
+  while (!Serial); //Wait to connect to computer
 
   lastPacket = millis(); //start watchdog timer for the first packet
 
@@ -254,76 +254,78 @@ void setup() {
 
 void loop() {
   //
-  //  if (tube.l_impact() == true) {
-  //    SerialUSB.println("left impact");
-  //  }
+//  if (tube.l_impact() == true) {
+//    Serial.println("left impact");
+//  }
+  Serial.println("Looping!");
+  config_pwm();
 
-//  if (tube.r_impact()) {
-    //SerialUSB.println("impact");
-    SerialUSB.println("CH0: " + String(ch0_duty_cycle));
-    SerialUSB.println("CH1: " + String(ch1_duty_cycle));
-    SerialUSB.println("CH2: " + String(ch2_duty_cycle));
-    SerialUSB.println("CH3: " + String(ch3_duty_cycle));
-    SerialUSB.println("CH4: " + String(ch4_duty_cycle));
-    SerialUSB.println("CH5: " + String(ch5_duty_cycle));
-    SerialUSB.println("CH6: " + String(ch6_duty_cycle));
-    SerialUSB.println("CH7: " + String(ch7_duty_cycle));
-    SerialUSB.println("CH8: " + String(ch8_duty_cycle));
-    SerialUSB.println("CH9: " + String(ch9_duty_cycle));
-    SerialUSB.println("Wheel position: " + String(right_wheel_pulses));
-    SerialUSB.println();
- // }
-
-  now = millis(); //get current time to  ensure connection to main controller
-
-  if (wdt_isTripped || now - lastPacket > 500) { //If the contorller hasn't recived a new packet in half a second (short circuit limits calcs)
-    left_wheel_cmd = 0;
-    right_wheel_cmd = 0;
-
-    if (wdt_isTripped == false) {
-      //SerialUSB.println("Drive controller watchdog tripped!");
-    }
-    wdt_isTripped = true;
-  }
+  //  if (tube.r_impact()) {
+  //Serial.println("impact");
+//  Serial.println("CH0: " + String(ch0_duty_cycle));
+//  Serial.println("CH1: " + String(ch1_duty_cycle));
+//  Serial.println("CH2: " + String(ch2_duty_cycle));
+//  Serial.println("CH3: " + String(ch3_duty_cycle));
+//  Serial.println("CH4: " + String(ch4_duty_cycle));
+//  Serial.println("CH5: " + String(ch5_duty_cycle));
+//  Serial.println("CH6: " + String(ch6_duty_cycle));
+//  Serial.println("CH7: " + String(ch7_duty_cycle));
+//  Serial.println("CH8: " + String(ch8_duty_cycle));
+//  Serial.println("CH9: " + String(ch9_duty_cycle));
+//  Serial.println("Wheel position: " + String(right_wheel_pulses));
+//  Serial.println();
+  // }
+//
+//  now = millis(); //get current time to  ensure connection to main controller
+//
+//  if (wdt_isTripped || now - lastPacket > 500) { //If the contorller hasn't recived a new packet in half a second (short circuit limits calcs)
+//    left_wheel_cmd = 0;
+//    right_wheel_cmd = 0;
+//
+//    if (wdt_isTripped == false) {
+//      //Serial.println("Drive controller watchdog tripped!");
+//    }
+//    wdt_isTripped = true;
+//  }
 
   // When a new packet arrives indicated by a newline '\n' char:
-  if (packetComplete) {      //If packet is valid
-    //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|head servo MSB|head servo LSB|
-    left_wheel_cmd = calculateHardwareValues(twosComp((packet[5] << 8) | packet[4]));
-    right_wheel_cmd = calculateHardwareValues(twosComp((packet[3] << 8) | packet[2]));
-    head_servo_cmd = constrain(map(twosComp((packet[1] << 8) | packet[0]), -1000, 1000, 1000, 2000), 1000, 2000);
+//  if (packetComplete) {      //If packet is valid
+//    //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|head servo MSB|head servo LSB|
+//    left_wheel_cmd = calculateHardwareValues(twosComp((packet[5] << 8) | packet[4]));
+//    right_wheel_cmd = calculateHardwareValues(twosComp((packet[3] << 8) | packet[2]));
+//    head_servo_cmd = constrain(map(twosComp((packet[1] << 8) | packet[0]), -1000, 1000, 1000, 2000), 1000, 2000);
 
-    //      SerialUSB.println(packet, BIN);      //DEBUG
+    //      Serial.println(packet, BIN);      //DEBUG
     //
-    //      SerialUSB.println(left_wheel_cmd, BIN); //DEBUG
-    //      SerialUSB.println(left_wheel_cmd);      //DEBUG
-    //      SerialUSB.println(right_wheel_cmd, BIN); //DEBUG
-    //      SerialUSB.println(right_wheel_cmd);      //DEBUG
+    //      Serial.println(left_wheel_cmd, BIN); //DEBUG
+    //      Serial.println(left_wheel_cmd);      //DEBUG
+    //      Serial.println(right_wheel_cmd, BIN); //DEBUG
+    //      Serial.println(right_wheel_cmd);      //DEBUG
 
-    lastPacket = millis(); //Pet the watchdog timer
-    wdt_isTripped = false;
+//    lastPacket = millis(); //Pet the watchdog timer
+//    wdt_isTripped = false;
 
     // clear the packet:
-    for (int i = 0; i < packetLength; i++) {
-      packet[i] = 0;
-    }
-    packetComplete = false;
-  }
+//    for (int i = 0; i < packetLength; i++) {
+//      packet[i] = 0;
+//    }
+//    packetComplete = false;
+//  }
 
   // update wheels to new vlaues
-  digitalWrite(left_wheel_dir_pin, (left_wheel_cmd > 0));
-  analogWrite(left_wheel_speed_pin, abs(left_wheel_cmd));
-  digitalWrite(right_wheel_dir_pin, (right_wheel_cmd > 0));
-  analogWrite(right_wheel_speed_pin, abs(right_wheel_cmd));
-  head_servo.writeMicroseconds(head_servo_cmd);
-
-  char c = GPS.read();
-  if (GPS.newNMEAreceived()) {
-    GPS.parse(GPS.lastNMEA());
-  }
-
-  //Send packet to computer
-  if (micros() - lastSend > sendPeriod) {
+//  digitalWrite(left_wheel_dir_pin, (left_wheel_cmd > 0));
+//  analogWrite(left_wheel_speed_pin, abs(left_wheel_cmd));
+//  digitalWrite(right_wheel_dir_pin, (right_wheel_cmd > 0));
+//  analogWrite(right_wheel_speed_pin, abs(right_wheel_cmd));
+//  head_servo.writeMicroseconds(head_servo_cmd);
+//
+//  char c = GPS.read();
+//  if (GPS.newNMEAreceived()) {
+//    GPS.parse(GPS.lastNMEA());
+//  }
+//
+//  //Send packet to computer
+//  if (micros() - lastSend > sendPeriod) {
     //Outgoing packet structure: |ch1 LSB|ch1 MSB|ch2 LSB|ch2 MSB|ch3 LSB|ch3 MSB|ch4 LSB|ch4 MSB|ch5 LSB|ch5 MSB|
     // |encoder_left LSB|encoder_left|encoder_left|encoder_left MSB|
     // |encoder_right LSB|encoder_right|encoder_right|encoder_right MSB|
@@ -332,75 +334,75 @@ void loop() {
     // |speed LSB|speed MSB|angle LSB|angle MSB|altitude LSB|altitude MSB|
     // |fix|fix quality|num satelites|
     // |PEC|
-    byte outGoingPacket[outGoingPacketLength];
+    //  byte outGoingPacket[outGoingPacketLength];
     //Sends channel duty cycles to topside in microseconds for later calculation of distance
-    outGoingPacket[0] = (byte)(ch1_duty_cycle & 0b0000000011111111);
-    outGoingPacket[1] = (byte)(ch1_duty_cycle >> 8);
-    outGoingPacket[2] = (byte)(ch2_duty_cycle & 0b0000000011111111);
-    outGoingPacket[3] = (byte)(ch2_duty_cycle >> 8);
-    outGoingPacket[4] = (byte)(ch3_duty_cycle & 0b0000000011111111);
-    outGoingPacket[5] = (byte)(ch3_duty_cycle >> 8);
-    outGoingPacket[6] = (byte)(ch4_duty_cycle & 0b0000000011111111);
-    outGoingPacket[7] = (byte)(ch4_duty_cycle >> 8);
-    outGoingPacket[8] = (byte)(ch5_duty_cycle & 0b0000000011111111);
-    outGoingPacket[9] = (byte)(ch5_duty_cycle >> 8);
-    outGoingPacket[10] = (byte)(left_wheel_pulses & 0b0000000011111111);
-    outGoingPacket[11] = (byte)(left_wheel_pulses >> 8 & 0b0000000011111111);
-    outGoingPacket[12] = (byte)(left_wheel_pulses >> 16 & 0b0000000011111111);
-    outGoingPacket[13] = (byte)(left_wheel_pulses >> 24);
-    outGoingPacket[14] = (byte)(right_wheel_pulses & 0b0000000011111111);
-    outGoingPacket[15] = (byte)(right_wheel_pulses >> 8 & 0b0000000011111111);
-    outGoingPacket[16] = (byte)(right_wheel_pulses >> 16 & 0b0000000011111111);
-    outGoingPacket[17] = (byte)(right_wheel_pulses >> 24);
-
-    FLOATUNION_t latitude;
-    latitude.number = GPS.latitudeDegrees;
-    FLOATUNION_t longitude;
-    longitude.number = GPS.longitudeDegrees;
-    FLOATUNION_t hdop; //horizontal dilution of precision for variance calculation and debugging
-    hdop.number = GPS.HDOP;
-
-    outGoingPacket[18] = (byte)(latitude.bytes[0]);
-    outGoingPacket[19] = (byte)(latitude.bytes[1]);
-    outGoingPacket[20] = (byte)(latitude.bytes[2]);
-    outGoingPacket[21] = (byte)(latitude.bytes[3]);
-
-    outGoingPacket[22] = (byte)(longitude.bytes[0]);
-    outGoingPacket[23] = (byte)(longitude.bytes[1]);
-    outGoingPacket[24] = (byte)(longitude.bytes[2]);
-    outGoingPacket[25] = (byte)(longitude.bytes[3]);
-
-    outGoingPacket[26] = (byte)(hdop.bytes[0]);
-    outGoingPacket[27] = (byte)(hdop.bytes[1]);
-    outGoingPacket[28] = (byte)(hdop.bytes[2]);
-    outGoingPacket[29] = (byte)(hdop.bytes[3]);
-
-    //multiply speed by 100 to retain two decimal precision when moved to jetson
-    outGoingPacket[30] = (byte)((int)(GPS.speed * 100) & 0b0000000011111111);
-    outGoingPacket[31] = (byte)((int)(GPS.speed * 100) >> 8);
-    outGoingPacket[32] = (byte)((int)(GPS.angle * 100) & 0b0000000011111111);
-    outGoingPacket[33] = (byte)((int)(GPS.angle * 100) >> 8);
-    outGoingPacket[34] = (byte)((int)(GPS.altitude * 100) & 0b0000000011111111);
-    outGoingPacket[35] = (byte)((int)(GPS.altitude * 100) >> 8);
-
-    outGoingPacket[36] = (byte)(GPS.fix);
-    outGoingPacket[37] = (byte)(GPS.fixquality);
-    outGoingPacket[38] = (byte)(GPS.satellites);
-
-    byte PEC = outGoingPacket[0];
-    for (int i = 1; i < outGoingPacketLength - 1; i++) {
-      PEC ^= outGoingPacket[i];
-    }
-    outGoingPacket[outGoingPacketLength - 1] = PEC;
-
-    //SerialUSB.write(outGoingPacket, outGoingPacketLength);
-  }
-
-  if (SerialUSB.available() > 0) {
-    serialEvent();
-  } else {
-    digitalWrite(LED_BUILTIN, LOW);
-  }
+//    outGoingPacket[0] = (byte)(ch1_duty_cycle & 0b0000000011111111);
+//    outGoingPacket[1] = (byte)(ch1_duty_cycle >> 8);
+//    outGoingPacket[2] = (byte)(ch2_duty_cycle & 0b0000000011111111);
+//    outGoingPacket[3] = (byte)(ch2_duty_cycle >> 8);
+//    outGoingPacket[4] = (byte)(ch3_duty_cycle & 0b0000000011111111);
+//    outGoingPacket[5] = (byte)(ch3_duty_cycle >> 8);
+//    outGoingPacket[6] = (byte)(ch4_duty_cycle & 0b0000000011111111);
+//    outGoingPacket[7] = (byte)(ch4_duty_cycle >> 8);
+//    outGoingPacket[8] = (byte)(ch5_duty_cycle & 0b0000000011111111);
+//    outGoingPacket[9] = (byte)(ch5_duty_cycle >> 8);
+//    outGoingPacket[10] = (byte)(left_wheel_pulses & 0b0000000011111111);
+//    outGoingPacket[11] = (byte)(left_wheel_pulses >> 8 & 0b0000000011111111);
+//    outGoingPacket[12] = (byte)(left_wheel_pulses >> 16 & 0b0000000011111111);
+//    outGoingPacket[13] = (byte)(left_wheel_pulses >> 24);
+//    outGoingPacket[14] = (byte)(right_wheel_pulses & 0b0000000011111111);
+//    outGoingPacket[15] = (byte)(right_wheel_pulses >> 8 & 0b0000000011111111);
+//    outGoingPacket[16] = (byte)(right_wheel_pulses >> 16 & 0b0000000011111111);
+//    outGoingPacket[17] = (byte)(right_wheel_pulses >> 24);
+//
+//    FLOATUNION_t latitude;
+//    latitude.number = GPS.latitudeDegrees;
+//    FLOATUNION_t longitude;
+//    longitude.number = GPS.longitudeDegrees;
+//    FLOATUNION_t hdop; //horizontal dilution of precision for variance calculation and debugging
+//    hdop.number = GPS.HDOP;
+//
+//    outGoingPacket[18] = (byte)(latitude.bytes[0]);
+//    outGoingPacket[19] = (byte)(latitude.bytes[1]);
+//    outGoingPacket[20] = (byte)(latitude.bytes[2]);
+//    outGoingPacket[21] = (byte)(latitude.bytes[3]);
+//
+//    outGoingPacket[22] = (byte)(longitude.bytes[0]);
+//    outGoingPacket[23] = (byte)(longitude.bytes[1]);
+//    outGoingPacket[24] = (byte)(longitude.bytes[2]);
+//    outGoingPacket[25] = (byte)(longitude.bytes[3]);
+//
+//    outGoingPacket[26] = (byte)(hdop.bytes[0]);
+//    outGoingPacket[27] = (byte)(hdop.bytes[1]);
+//    outGoingPacket[28] = (byte)(hdop.bytes[2]);
+//    outGoingPacket[29] = (byte)(hdop.bytes[3]);
+//
+//    //multiply speed by 100 to retain two decimal precision when moved to jetson
+//    outGoingPacket[30] = (byte)((int)(GPS.speed * 100) & 0b0000000011111111);
+//    outGoingPacket[31] = (byte)((int)(GPS.speed * 100) >> 8);
+//    outGoingPacket[32] = (byte)((int)(GPS.angle * 100) & 0b0000000011111111);
+//    outGoingPacket[33] = (byte)((int)(GPS.angle * 100) >> 8);
+//    outGoingPacket[34] = (byte)((int)(GPS.altitude * 100) & 0b0000000011111111);
+//    outGoingPacket[35] = (byte)((int)(GPS.altitude * 100) >> 8);
+//
+//    outGoingPacket[36] = (byte)(GPS.fix);
+//    outGoingPacket[37] = (byte)(GPS.fixquality);
+//    outGoingPacket[38] = (byte)(GPS.satellites);
+//
+//    byte PEC = outGoingPacket[0];
+//    for (int i = 1; i < outGoingPacketLength - 1; i++) {
+//      PEC ^= outGoingPacket[i];
+//    }
+//    outGoingPacket[outGoingPacketLength - 1] = PEC;
+//
+//    //Serial.write(outGoingPacket, outGoingPacketLength);
+//  }
+//
+//  if (Serial.available() > 0) {
+//    serialEvent();
+//  } else {
+//    digitalWrite(LED_BUILTIN, LOW);
+//  }
 }
 
 void serialEvent() {
@@ -410,7 +412,7 @@ void serialEvent() {
   for (int i = 0; i < packetLength; i++) {
     packet[i] = static_cast<byte>(Serial.read()); //Never ever use readBytes()
     if (i < packetLength - 1) {
-      packet[i] = static_cast<byte>(SerialUSB.read()); //Never ever use readBytes()
+      packet[i] = static_cast<byte>(Serial.read()); //Never ever use readBytes()
       if (i < packetLength - 1) {
         pecVal = pecVal ^ packet[i]; //XOR with incomming byte
       }
@@ -425,8 +427,8 @@ void serialEvent() {
     }
     else
     {
-      while (SerialUSB.available()) {
-        SerialUSB.read(); //Clear the Serial input buffer
+      while (Serial.available()) {
+        -   Serial.read(); //Clear the Serial input buffer
       }
       // clear the packet:
       for (int i = 0; i < packetLength; i++) {
