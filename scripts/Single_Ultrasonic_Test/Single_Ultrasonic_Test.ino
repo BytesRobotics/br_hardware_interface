@@ -1,63 +1,47 @@
-//#define PORT_NUMBER 17    // Digital pin 13 is port pin PA17
-
 //C:\Users\Gavin Remme\AppData\Local\Arduino15\packages\arduino\hardware\samd\1.8.6\cores\arduino
 
 /*
- * 
-extern voidFuncPtr ISRcallback[EXTERNAL_NUM_INTERRUPTS];
-extern uint32_t    ISRlist[EXTERNAL_NUM_INTERRUPTS];
-extern uint32_t    nints; // Stores total number of attached interrupts
+  Lines added to the top of Winterrupts.c
+  extern voidFuncPtr ISRcallback[EXTERNAL_NUM_INTERRUPTS];
+  extern uint32_t    ISRlist[EXTERNAL_NUM_INTERRUPTS];
+  extern uint32_t    nints; // Stores total number of attached interrupts
 
-voidFuncPtr ISRcallback[EXTERNAL_NUM_INTERRUPTS];
-uint32_t    ISRlist[EXTERNAL_NUM_INTERRUPTS];
-uint32_t    nints; // Stores total number of attached interrupts
- */
+  voidFuncPtr ISRcallback[EXTERNAL_NUM_INTERRUPTS];
+  uint32_t    ISRlist[EXTERNAL_NUM_INTERRUPTS];
+  uint32_t    nints; // Stores total number of attached interrupts
+*/
 
-void attachInterrupt(uint32_t pin, uint32_t port, uint32_t extint, voidFuncPtr callback, uint32_t mode);
+void attachInterrupt(uint32_t port, uint32_t pin, uint32_t extint, voidFuncPtr callback, uint32_t mode); //Port, pin, interrupt number (ex: PA17 is 0, 17, 1)
 
-//volatile uint32_t *setPin = &PORT->Group[PORTA].OUTSET.reg;  // Ptr to PortA Data Output Value Set register
-//volatile uint32_t *clrPin = &PORT->Group[PORTA].OUTCLR.reg;  // Ptr to PortA Data Output Value Clear register
-//volatile uint32_t *dirPin = &PORT->Group[PORTA].DIRSET.reg;  // Ptr to PortA Data Direction Set register
-////Setting a bit to 0 in the data direction register (DIR) configures the corresponding pin as an input
-//const uint32_t  PinMASK = (0ul << PORT_NUMBER);   // Generate bit mask, binary one 17 places to the left
-
-//#define CH0 PA17
-volatile unsigned long ch_0_rising, ch0_duty_cycle;
+volatile long ch_0_rising, ch0_duty_cycle;
 void ch0_rising_interrupt();
 void ch0_falling_interrupt();
 
-int counter = 0;
-
 void setup() {
-//  *dirPin = PinMASK;
-  SerialUSB.begin(9600);
-  while(!SerialUSB);
-//  pinMode(CH0, INPUT);
+  SerialUSB.begin(115200);
+  while (!SerialUSB);
   SerialUSB.println("Hello there, my name is Bytes :)");
-//  attachInterrupt(5, ch0_rising_interrupt, RISING);
-//  attachInterrupt(11, 1, 11, ch0_rising_interrupt, RISING);
-  attachInterrupt(17, 0, 1, ch0_rising_interrupt, RISING);
-  SerialUSB.println("interuppt attached");
- // config_pwm();
+  attachInterrupt(1, 7, 7, ch0_rising_interrupt, RISING);
+  SerialUSB.println("interrupt attached");
+  config_pwm();
   SerialUSB.println("Setup complete");
 }
 
 void loop() {
-//  SerialUSB.println("CH0: ");
-  //SerialUSB.println(ch0_duty_cycle));
-  Serial.println(counter);
+  SerialUSB.print("CH0: ");
+  SerialUSB.println(ch0_duty_cycle);
 }
 
 //ch0
 void ch0_rising_interrupt() {
-counter++;
-//  attachInterrupt(5, ch0_rising_interrupt, RISING);
+  ch_0_rising = micros();
+  attachInterrupt(1, 7, 7, ch0_falling_interrupt, FALLING);
 }
-//
-//void ch0_falling_interrupt() {
-//  ch0_duty_cycle = micros() - ch_0_rising;
-//  attachInterrupt(0, 17, 1, ch0_rising_interrupt, RISING);
-//}
+
+void ch0_falling_interrupt() {
+  ch0_duty_cycle = micros() - ch_0_rising;
+  attachInterrupt(1, 7, 7, ch0_rising_interrupt, RISING);
+}
 
 void config_pwm() {
 
@@ -76,10 +60,6 @@ void config_pwm() {
   while (GCLK->STATUS.bit.SYNCBUSY);              // Wait for synchronization
 
   // Enable the port multiplexer for the digital pin D7
-  SerialUSB.print("Port ");
-  SerialUSB.println(g_APinDescription[7].ulPort); // shoudl be 0
-  SerialUSB.print("Pin ");
-  SerialUSB.println(g_APinDescription[7].ulPin); //should be 21
   PORT->Group[0].PINCFG[21].bit.PMUXEN = 1;
 
   // Connect the TCC0 timer to digital output D7 - port pins are paired odd PMUO and even PMUXE

@@ -10,12 +10,6 @@ TSS tube; //create an instance of the TSS library for our tube
 // https://howtomechatronics.com/tutorials/arduino/ultrasonic-sensor-hc-sr04/
 // https://www.avdweb.nl/arduino/samd21/virus
 
-//Steps to initialize additional interrupts:
-//CLK_EIC_APB = 0x21; //Enable CLK_EIC_APB
-//Enable GCLK_EIC (if we need edge detection or filtering)
-//Write the EIC configuration registers(EVCCTRL, WAKEUP, CONFIGy)
-//Enable EIC
-
 // Allows us to get byte array from float which is important for data transmission
 typedef union
 {

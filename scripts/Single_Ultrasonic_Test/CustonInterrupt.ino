@@ -77,10 +77,8 @@ int pinPeripheral( uint32_t ulPin, uint32_t ulPort, EPioType ulPeripheral )
 #if 0
       // Is the pio pin in the lower 16 ones?
       // The WRCONFIG register allows update of only 16 pin max out of 32
-         SerialUSB.println("2.1");
       if ( ulPin < 16 )
       {
-           SerialUSB.println("2.2");
 
         PORT->Group[ulPort].WRCONFIG.reg = PORT_WRCONFIG_WRPMUX | PORT_WRCONFIG_PMUXEN | PORT_WRCONFIG_PMUX( ulPeripheral ) |
                                                                     PORT_WRCONFIG_WRPINCFG |
@@ -88,7 +86,6 @@ int pinPeripheral( uint32_t ulPin, uint32_t ulPort, EPioType ulPeripheral )
       }
       else
       {
-           SerialUSB.println("2.3");
 
         PORT->Group[ulPort].WRCONFIG.reg = PORT_WRCONFIG_HWSEL |
                                                                     PORT_WRCONFIG_WRPMUX | PORT_WRCONFIG_PMUXEN | PORT_WRCONFIG_PMUX( ulPeripheral ) |
@@ -98,7 +95,6 @@ int pinPeripheral( uint32_t ulPin, uint32_t ulPort, EPioType ulPeripheral )
 #else
       if ( ulPin & 1 ) // is pin odd?
       {
-           SerialUSB.println("2.4");
 
         uint32_t temp ;
 
@@ -111,30 +107,18 @@ int pinPeripheral( uint32_t ulPin, uint32_t ulPort, EPioType ulPeripheral )
       }
       else // even pin
       {
-           SerialUSB.println("2.5");
 
         uint32_t temp ;
 
-           SerialUSB.println("2.5.1");
 
         temp = (PORT->Group[ulPort].PMUX[ulPin >> 1].reg) & PORT_PMUX_PMUXO( 0xF ) ;
-           SerialUSB.println("2.5.2");
-
-           Serial.println(ulPin);
-           Serial.println(ulPort);
-           
-           SerialUSB.println(PORT->Group[ulPort].PMUX[ulPin >> 1].reg, BIN);
-           SerialUSB.println( temp|PORT_PMUX_PMUXE( ulPeripheral ) , BIN);
 
         PORT->Group[ulPort].PMUX[ulPin >> 1].reg = temp|PORT_PMUX_PMUXE( ulPeripheral ) ;
-           SerialUSB.println("2.5.3");
 
         PORT->Group[ulPort].PINCFG[ulPin].reg |= PORT_PINCFG_PMUXEN ; // Enable port mux
       }
 #endif
     break ;
-
-       SerialUSB.println("2.6");
 
 
     case PIO_NOT_A_PIN:
@@ -142,13 +126,12 @@ int pinPeripheral( uint32_t ulPin, uint32_t ulPort, EPioType ulPeripheral )
     break ;
   }
 
-     SerialUSB.println("2.7");
 
 
   return 0 ;
 }
 
-void attachInterrupt(uint32_t pin, uint32_t port, uint32_t extint, voidFuncPtr callback, uint32_t mode)
+void attachInterrupt(uint32_t port, uint32_t pin, uint32_t extint, voidFuncPtr callback, uint32_t mode)
 {
   static int enabled = 0;
   uint32_t config;
@@ -161,21 +144,17 @@ void attachInterrupt(uint32_t pin, uint32_t port, uint32_t extint, voidFuncPtr c
     __initialize();
     enabled = 1;
   }
-  Serial.print("nints");
-  SerialUSB.println(nints);
-   SerialUSB.println("1");
+
 
   // Enable wakeup capability on pin in case being used during sleep
   uint32_t inMask = 1 << in;
   EIC->WAKEUP.reg |= inMask;
   
-   SerialUSB.println("2");
 
   // Assign pin to EIC
   pinPeripheral(pin, port, PIO_EXTINT);
 
   
-   SerialUSB.println("3");
 
   // Only store when there is really an ISR to call.
   // This allow for calling attachInterrupt(pin, NULL, mode), we set up all needed register
@@ -234,9 +213,7 @@ void attachInterrupt(uint32_t pin, uint32_t port, uint32_t extint, voidFuncPtr c
     }
   }
   
-   SerialUSB.println("4");
   // Enable the interrupt
   EIC->INTENSET.reg = EIC_INTENSET_EXTINT(inMask);
   
-   SerialUSB.println("5");
 }

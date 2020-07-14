@@ -2,14 +2,11 @@
 void ch0_rising_interrupt() {
   ch_0_rising = micros();
   attachInterrupt(digitalPinToInterrupt(CH0), ch0_falling_interrupt, FALLING);
-  SerialUSB.print("Triggered");
 }
 
 void ch0_falling_interrupt() {
   ch0_duty_cycle = micros() - ch_0_rising;
   attachInterrupt(digitalPinToInterrupt(CH0), ch0_rising_interrupt, RISING);
-  SerialUSB.print("Triggered");
-
 }
 
 //ch1
