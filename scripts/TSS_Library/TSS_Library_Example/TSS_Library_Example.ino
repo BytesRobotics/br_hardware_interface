@@ -1,13 +1,16 @@
 #include "TSS.h"
 #include "Wire.h"
 TSS tube;
-const int ledPin    = PIN_LED_13; // the number of the LED pin
 unsigned long start = 0;
 unsigned long stoptime = 0;
+
 void setup()
 {
-  Wire.begin();           //begins I2C communication
-  Wire.setClock(400000);  //sets I2C speed
+  tube.wire2.begin();           //begins I2C communication
+  tube.wire2.setClock(400000);  //sets I2C speed
+
+  Serial.begin(115200);
+  Serial.println("wire1 setup");
   while (!Serial);        //Wait for Serial to begin
 
   ///initialize right and left sensors
@@ -19,7 +22,6 @@ void setup()
 
   tube.setImpactThreshold(2000);//sets how much the pressure has to increase before an impact event is triggered
   tube.setReleaseThreshold(1500);//sets how much the pressure has to decrease before a release event is triggered
-  Serial.begin(115200);
 }
 
 void graph_it() {

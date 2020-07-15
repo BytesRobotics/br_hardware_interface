@@ -9,6 +9,7 @@
 #define Wire_h
 
 #include "Arduino.h"
+#include <Wire.h>
 
 //definitions of values used to talk to barometric pressure sensors
 #define MS5xxx_CMD_RESET    0x1E    // perform reset
@@ -23,6 +24,8 @@
 class TSS
 {
   public:
+    TwoWire wire1 = TwoWire(&sercom0, 36, 37); //I2C setup for PA04 and PA05 (SDA & SCL)
+    TwoWire wire2 = TwoWire(&sercom2, 38, 39); //I2C setup for PA08 and PA09
     void setImpactThreshold(int x);
     void setReleaseThreshold(int x);
     void send_cmd(char addr, byte aCMD);
@@ -42,7 +45,7 @@ class TSS
     bool r_impact();
     bool l_impact();
     long rightlastDebounceTime = 0; //stores when the debounce begins, doubles as exact time impact occured
-    long leftlastDebounceTime = 0;    
+    long leftlastDebounceTime = 0;
     unsigned long rightImpactTime; //system time at which the sensors are impacted
     unsigned long leftImpactTime;
   private:
