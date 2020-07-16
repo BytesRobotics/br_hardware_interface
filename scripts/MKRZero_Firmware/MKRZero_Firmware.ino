@@ -4,6 +4,7 @@
 #include <Adafruit_GPS.h>
 #include <Servo.h>
 TSS tube; //create an instance of the TSS library for our tube
+unsigned long lastloop = 0;
 
 // https://tutorial.cytron.io/2015/04/05/using-mdd10a-arduino-uno/
 // https://www.amazon.com/Cytron-Dual-Channel-Motor-Driver/dp/B07CW34YRB/ref=sr_1_6?keywords=Cytron+10A+5-30V+Dual+Channel+DC+Motor+Driver&qid=1574466884&sr=8-6
@@ -23,7 +24,7 @@ typedef union
 
 // GPS config
 // https://github.com/adafruit/Adafruit_GPS/blob/master/Adafruit_GPS.h
-#define GPSSerial Serial
+#define GPSSerial Serial1
 Adafruit_GPS GPS(&GPSSerial);
 
 // Distance sensor config
@@ -31,28 +32,12 @@ Adafruit_GPS GPS(&GPSSerial);
 #define trig_pin 7 //only one trig pin that will handle all the sensors (PWM freq will be 1/period with dutycycle equivalent to 10us) period = timeout length
 // PWM pin 2 is PA10 TCC1-W0/TCC0-W2
 #define dist_timeout = 24000 //~400CM/4M max distance (time in microseconds) - 24ms - 41.67Hz - NOT Used in current implementation
-// Echo pins for the 8 onboard distance sensors, labeled Ch1-CH8, use pins 0,1,4,5,6,7,8,9,A1,A2 for interrupts
-#define CH0 15 //Pins for ultrasonic sensors, this one is -- in the uM
-#define CH1 13 //PA17
-#define CH2 A5 //PB02
-#define CH3 12 //PA19
-#define CH4 A3 //PA04  
-#define CH5 A4 //PA05
-#define CH6 8 //PA06
-#define CH7 9 //PA07
-#define CH8 A1 //PB08
-#define CH9 A2 //PB09
-/*#define CH10
-  #define CH11
-*/
+
 
 // Definitions for the rotary encoder
 // https://youtu.be/V1txmR8GXzE
-#define left_wheel_encoder_a_pin 2 //PA10
-#define left_wheel_encoder_b_pin 4 //PA08
-#define right_wheel_encoder_a_pin 24 //PB11
-#define right_wheel_encoder_b_pin 10 //PA15, 10 needs to be switched back to 5
-#define encoder_counts_per_revolution = 374 // Not used in current implementation
+#define left_wheel_encoder_b_pin 20 //PA06
+#define right_wheel_encoder_b_pin 15 //PA02, 10 needs to be switched back to 5
 
 // count the total number of pulses since the start of tracking
 volatile long left_wheel_pulses = 0;
@@ -138,6 +123,14 @@ volatile unsigned long ch_9_rising, ch9_duty_cycle;
 void ch9_rising_interrupt();
 void ch9_falling_interrupt();
 
+volatile unsigned long ch_10_rising, ch10_duty_cycle;
+void ch10_rising_interrupt();
+void ch10_falling_interrupt();
+
+volatile unsigned long ch_11_rising, ch11_duty_cycle;
+void ch11_rising_interrupt();
+void ch11_falling_interrupt();
+
 void left_wheel_encoder_interrupt();
 void right_wheel_encoder_interrupt();
 
@@ -158,6 +151,9 @@ inline int twosComp(int input) {
   }
 }
 
+//Modified attachInterrupt() function that allows us to specify port and pad number, defined in CustomInterrupts.ino
+void attachInterrupt(uint32_t port, uint32_t pin, uint32_t extint, voidFuncPtr callback, uint32_t mode); //Port, pin, interrupt number (ex: PA17 is 0, 17, 1)
+
 void setup() {
   Wire.begin(); //begin I2C communication for TSS
   Wire.setClock(400000);
@@ -175,13 +171,13 @@ void setup() {
   tube.setReleaseThreshold(2500);//sets how much the pressure has to decrease before a release event is triggered
 
   // Configure left and right wheel PWM, dir, and encoder
-  pinMode(right_wheel_encoder_a_pin, INPUT_PULLUP);
-  pinMode(right_wheel_encoder_b_pin, INPUT_PULLUP);
-  pinMode(left_wheel_encoder_a_pin, INPUT_PULLUP);
-  pinMode(left_wheel_encoder_b_pin, INPUT_PULLUP);
+  //  pinMode(right_wheel_encoder_a_pin, INPUT_PULLUP);
+    pinMode(right_wheel_encoder_b_pin, INPUT_PULLUP);
+  //  pinMode(left_wheel_encoder_a_pin, INPUT_PULLUP);
+    pinMode(left_wheel_encoder_b_pin, INPUT_PULLUP);
 
-  attachInterrupt(digitalPinToInterrupt(right_wheel_encoder_a_pin), right_wheel_encoder_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(left_wheel_encoder_a_pin), left_wheel_encoder_interrupt, RISING);
+  attachInterrupt(1, 8, 8, right_wheel_encoder_interrupt, RISING); //Wheel encoder A on PB08
+  attachInterrupt(0, 12, 12, left_wheel_encoder_interrupt, RISING); //Ender B on PA12
 
   pinMode(left_wheel_speed_pin, OUTPUT);
   pinMode(left_wheel_dir_pin, OUTPUT);
@@ -194,28 +190,18 @@ void setup() {
   //define pin functions for the distance sensors
   pinMode(trig_pin, OUTPUT);
 
-  pinMode(CH0, INPUT);
-  pinMode(CH1, INPUT);
-  pinMode(CH2, INPUT);
-  pinMode(CH3, INPUT);
-  pinMode(CH4, INPUT);
-  pinMode(CH5, INPUT);
-  pinMode(CH6, INPUT);
-  pinMode(CH7, INPUT);
-  pinMode(CH8, INPUT);
-  pinMode(CH9, INPUT);
-
-  attachInterrupt(digitalPinToInterrupt(CH0), ch0_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(CH1), ch1_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(CH2), ch2_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(CH3), ch3_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(CH4), ch4_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(CH5), ch5_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(CH6), ch6_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(CH7), ch7_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(CH8), ch8_rising_interrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(CH9), ch9_rising_interrupt, RISING);
-
+  attachInterrupt(1, 6, 6, ch0_rising_interrupt, RISING); //PB06 EXTINT6 y
+  attachInterrupt(1, 7, 7, ch1_rising_interrupt, RISING); //PB07 EXTINT7 y
+  attachInterrupt(1, 10, 10, ch2_rising_interrupt, RISING); //PB10 EXTINT10 y
+  attachInterrupt(1, 3, 11, ch3_rising_interrupt, RISING); //PB03 EXTINT11 y
+  attachInterrupt(0, 20, 4, ch4_rising_interrupt, RISING); //PA20 EXTINT4 y
+  attachInterrupt(1, 5, 5, ch5_rising_interrupt, RISING); //PB05 EXTINT5 y
+  attachInterrupt(0, 16, 0, ch6_rising_interrupt, RISING); //PA16 EXTINT0 y
+  attachInterrupt(1, 2, 2, ch7_rising_interrupt, RISING); //PB02 EXTINT2 y
+  attachInterrupt(1, 3, 3, ch8_rising_interrupt, RISING); //PB03 EXTINT3 y
+  attachInterrupt(0, 17, 1, ch9_rising_interrupt, RISING); //PA17 EXTINT1 y
+  attachInterrupt(1, 9, 10, ch10_rising_interrupt, RISING); //PB09 EXTINT10
+  attachInterrupt(1, 13, 13, ch11_rising_interrupt, RISING); //PB13 EXTINT13
   //Start distance sensing
   //  config_pwm(); //Start PWM pulses on pin 7 to control trigger pins on ultrasonic sensors
 
@@ -241,7 +227,7 @@ void setup() {
   GPS.sendCommand(PMTK_ENABLE_SBAS);
   GPS.sendCommand(PMTK_ENABLE_WAAS);
 
-  while (!SerialUSB); //Wait to connect to computer
+  while (!Serial); //Wait to connect to computer
 
   config_pwm(); //Start PWM pulses on pin 7 to control trigger pins on ultrasonic sensors
 
@@ -258,16 +244,25 @@ void loop() {
 
   //  if (tube.r_impact()) {
   //Serial.println("impact");
-  SerialUSB.println("CH0: " + String(ch0_duty_cycle));
-  //  Serial.println("CH1: " + String(ch1_duty_cycle));
-  //  Serial.println("CH2: " + String(ch2_duty_cycle));
-  //  Serial.println("CH3: " + String(ch3_duty_cycle));
-  //  Serial.println("CH4: " + String(ch4_duty_cycle));
-  //  Serial.println("CH5: " + String(ch5_duty_cycle));
-  //  Serial.println("CH6: " + String(ch6_duty_cycle));
-  //  Serial.println("CH7: " + String(ch7_duty_cycle));
-  //  Serial.println("CH8: " + String(ch8_duty_cycle));
-  //  Serial.println("CH9: " + String(ch9_duty_cycle));
+  if (millis() - lastloop > 100) { //wait 1000 millis to print again, but don't hold up the CPU
+    //Serial.println("GPS seconds: " + GPS.seconds, DEC);
+    Serial.println("CH0: " + String(ch0_duty_cycle));
+    Serial.println("CH1: " + String(ch1_duty_cycle));
+    Serial.println("CH2: " + String(ch2_duty_cycle));
+    Serial.println("CH3: " + String(ch3_duty_cycle));
+    Serial.println("CH4: " + String(ch4_duty_cycle));
+    Serial.println("CH5: " + String(ch5_duty_cycle));
+    Serial.println("CH6: " + String(ch6_duty_cycle));
+    Serial.println("CH7: " + String(ch7_duty_cycle));
+    Serial.println("CH8: " + String(ch8_duty_cycle));
+    Serial.println("CH9: " + String(ch9_duty_cycle));
+    Serial.println("CH10: " + String(ch10_duty_cycle));
+    Serial.println("CH11: " + String(ch11_duty_cycle));
+    Serial.println("Left wheel position: " + String(left_wheel_pulses));
+    Serial.println("Right wheel position: " + String(right_wheel_pulses));
+    Serial.println();
+    lastloop = millis();
+  }
   //  Serial.println("Wheel position: " + String(right_wheel_pulses));
   //  Serial.println();
   // }

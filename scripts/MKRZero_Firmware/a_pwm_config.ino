@@ -33,9 +33,7 @@ void config_pwm(){
   while (GCLK->STATUS.bit.SYNCBUSY);              // Wait for synchronization
 
   // Enable the port multiplexer for the digital pin D7
-  SerialUSB.print("Port ");
   SerialUSB.println(g_APinDescription[7].ulPort); // shoudl be 0
-  SerialUSB.print("Pin ");
   SerialUSB.println(g_APinDescription[7].ulPin); //should be 21
   PORT->Group[0].PINCFG[21].bit.PMUXEN = 1;
  
