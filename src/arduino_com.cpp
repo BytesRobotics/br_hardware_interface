@@ -30,13 +30,13 @@ T map(T input, T inMin, T inMax, T outMin, T outMax){
     return output;
 }
 
-
-HardwareCom::HardwareCom(std::string port, int baud): connection(port, baud, serial::Timeout::simpleTimeout(10),
-                                                                 serial::eightbits, serial::parity_even, serial::stopbits_one)
+HardwareCom::HardwareCom(const std::string& port, int baud):
+        connection_(port, baud, serial::Timeout::simpleTimeout(10),
+                    serial::eightbits, serial::parity_even, serial::stopbits_one)
 //Serial set to SER_8E1 (8 bit, even parity, 1 stop bit)
 {
   //open serial port
-  if(connection.isOpen()){
+  if(connection_.isOpen()){
     std::cout << "Port " << port << " opened successfully!\n";
   } else {
     std::cerr << "Port " << port << " failed to open successfully!\n";
@@ -44,7 +44,7 @@ HardwareCom::HardwareCom(std::string port, int baud): connection(port, baud, ser
   }
 }
 
-bool HardwareCom::setController(double rmotor_cmd, double lmotor_cmd, double head_cmd){
+bool HardwareCom::set_controller(double rmotor_cmd, double lmotor_cmd, double head_cmd){
 //  std::cout << "rmotor_cmd: " << rmotor_cmd << "\n";
 //  std::cout << "lmotor_cmd: " << lmotor_cmd << "\n";
    auto lmotor = static_cast<int>(map<double>(lmotor_cmd, -1, 1, -1000, 1000));
@@ -56,73 +56,75 @@ bool HardwareCom::setController(double rmotor_cmd, double lmotor_cmd, double hea
    constrain(rmotor, -1000, 1000);
 
   //Fill outGoingPacket with four bytes with proper packet structure
-   outgoingPacket[5] = static_cast<uint8_t>(lmotor >> 8);                 //lmotor MSB
-   outgoingPacket[4] = static_cast<uint8_t>(lmotor & 0b0000000011111111); //lmotor LSB
-   outgoingPacket[3] = static_cast<uint8_t>(rmotor >> 8);                 //rmotor  MSB
-   outgoingPacket[2] = static_cast<uint8_t>(rmotor & 0b0000000011111111); //rmotor LSB
-   outgoingPacket[1] = static_cast<uint8_t>(head >> 8);                   //head  MSB
-   outgoingPacket[0] = static_cast<uint8_t>(head & 0b0000000011111111);   //head LSB
+   outgoing_packet_[5] = static_cast<uint8_t>(lmotor >> 8);                 //lmotor MSB
+   outgoing_packet_[4] = static_cast<uint8_t>(lmotor & 0b0000000011111111); //lmotor LSB
+   outgoing_packet_[3] = static_cast<uint8_t>(rmotor >> 8);                 //rmotor  MSB
+   outgoing_packet_[2] = static_cast<uint8_t>(rmotor & 0b0000000011111111); //rmotor LSB
+   outgoing_packet_[1] = static_cast<uint8_t>(head >> 8);                   //head  MSB
+   outgoing_packet_[0] = static_cast<uint8_t>(head & 0b0000000011111111);   //head LSB
 
    //PEC by XORing all values
-   outgoingPacket[outgoingPacketLength-1] = outgoingPacket[0];
-   for(int i=1; i<outgoingPacketLength-1;i++){outgoingPacket[outgoingPacketLength-1]^=outgoingPacket[i];}
+   outgoing_packet_[outgoing_packet_length_ - 1] = outgoing_packet_[0];
+   for(int i=1; i < outgoing_packet_length_ - 1; i++){ outgoing_packet_[outgoing_packet_length_ - 1]^=outgoing_packet_[i];}
 
-//  std::cout << "packet down: " <<  std::bitset<8>(outgoingPacket[4]) << std::bitset<8>(outgoingPacket[3]) << std::bitset<8>(outgoingPacket[2]) << std::bitset<8>(outgoingPacket[1]) << std::bitset<8>(outgoingPacket[0]) << "\n";
+//  std::cout << "packet down: " <<  std::bitset<8>(outgoing_packet_[4]) << std::bitset<8>(outgoing_packet_[3]) << std::bitset<8>(outgoing_packet_[2]) << std::bitset<8>(outgoing_packet_[1]) << std::bitset<8>(outgoing_packet_[0]) << "\n";
 
-  size_t bytesSent = connection.write(outgoingPacket, outgoingPacketLength); //Sending 6 bytes
+  size_t bytesSent = connection_.write(outgoing_packet_, outgoing_packet_length_); //Sending 6 bytes
 
-  if(bytesSent != outgoingPacketLength){
-//    std::cerr << "Number of bytes (" << bytesSent << ") sent not equal to six!\n";
-    return false;
-  }
+    return int(bytesSent) == outgoing_packet_length_;
 //  std::cout << "packet sent\n";
-  return true;
 }
 
-bool HardwareCom::readController(){
-    if(connection.available()>=incomingPacketLength){
-        connection.read(incomingPacket, incomingPacketLength);
-        connection.flushInput();
+bool HardwareCom::read_controller(){
+    if(static_cast<int>(connection_.available()) > incoming_packet_length_ * 5){
+        std::cerr << "Buffer Overflowing" << std::endl;
+    }
+    if(static_cast<int>(connection_.available()) >= incoming_packet_length_ - 1){
+        connection_.read(incoming_packet_, incoming_packet_length_);
+        connection_.flushInput();
 
         //Print out the entire packet
 //        std::cout << "Packet received:   ";
-//        for(int x=0; x<incomingPacketLength; x++){
-//            std::cout << std::bitset<8>(incomingPacket[x]);
+//        for(int x=0; x<incoming_packet_length_; x++){
+//            std::cout << std::bitset<8>(incoming_packet_[x]);
 //        }
 //        std::cout << "\n";
 
-        uint8_t pec = incomingPacket[0];
-        for(int i=1; i<incomingPacketLength-1;i++){pec^=incomingPacket[i];}
-        if(pec == static_cast<uint8_t>(incomingPacket[incomingPacketLength-1])){
+        uint8_t pec = incoming_packet_[0];
+        for(int i=1; i < incoming_packet_length_; i++){ pec^=incoming_packet_[i];}
+        if(pec == static_cast<uint8_t>(incoming_packet_[incoming_packet_length_ - 1])){
 //            std::cout << "PEC Correct\n";
-            //Fill in channel array with distance sensor values
-            for(int i =0; i<10; i+=2){channels[i/2] = static_cast<int>(incomingPacket[i] | (incomingPacket[i+1]<<8));}
+            /// Fill in channel array with distance sensor values
+            for(int i =0; i<2*num_channels_; i+=2){ channels_[i / 2] = static_cast<int>(incoming_packet_[i] | (incoming_packet_[i + 1] << 8));}
 
-            encoderLeft = static_cast<int>(incomingPacket[10] | (incomingPacket[11]<<8) | (incomingPacket[12]<<16) | (incomingPacket[13]<<24));
-            encoderRight = static_cast<int>(incomingPacket[14] | (incomingPacket[15]<<8) | (incomingPacket[16]<<16) | (incomingPacket[17]<<24));
+            auto o = 2*num_channels_; //! offset
+            encoder_left_ = static_cast<int>(incoming_packet_[o] | (incoming_packet_[o+1] << 8) | (incoming_packet_[o+2] << 16) | (incoming_packet_[o+3] << 24));
+            encoder_right_ = static_cast<int>(incoming_packet_[o+4] | (incoming_packet_[o+5] << 8) | (incoming_packet_[o+6] << 16) | (incoming_packet_[o+7] << 24));
 
-            latitude.bytes[0] = incomingPacket[18];
-            latitude.bytes[1] = incomingPacket[19];
-            latitude.bytes[2] = incomingPacket[20];
-            latitude.bytes[3] = incomingPacket[21];
+            latitude_.bytes[0] = incoming_packet_[o+8];
+            latitude_.bytes[1] = incoming_packet_[o+9];
+            latitude_.bytes[2] = incoming_packet_[o+10];
+            latitude_.bytes[3] = incoming_packet_[o+11];
 
-            longitude.bytes[0] = incomingPacket[22];
-            longitude.bytes[1] = incomingPacket[23];
-            longitude.bytes[2] = incomingPacket[24];
-            longitude.bytes[3] = incomingPacket[25];
+            longitude_.bytes[0] = incoming_packet_[o+12];
+            longitude_.bytes[1] = incoming_packet_[o+13];
+            longitude_.bytes[2] = incoming_packet_[o+14];
+            longitude_.bytes[3] = incoming_packet_[o+15];
 
-            hdop.bytes[0] = incomingPacket[26];
-            hdop.bytes[1] = incomingPacket[27];
-            hdop.bytes[2] = incomingPacket[28];
-            hdop.bytes[3] = incomingPacket[29];
+            hdop_.bytes[0] = incoming_packet_[o+16];
+            hdop_.bytes[1] = incoming_packet_[o+17];
+            hdop_.bytes[2] = incoming_packet_[o+18];
+            hdop_.bytes[3] = incoming_packet_[o+19];
 
-            speed = static_cast<int>(incomingPacket[30] | (incomingPacket[31]<<8))/100.0;
-            angle = static_cast<int>(incomingPacket[32] | (incomingPacket[33]<<8))/100.0;
-            altitude = static_cast<int>(incomingPacket[34] | (incomingPacket[35]<<8))/100.0;
+            speed_    = static_cast<int>(incoming_packet_[o+20] | (incoming_packet_[o+21] << 8)) / 100.0;
+            angle_    = static_cast<int>(incoming_packet_[o+22] | (incoming_packet_[o+23] << 8)) / 100.0;
+            altitude_ = static_cast<int>(incoming_packet_[o+24] | (incoming_packet_[o+25] << 8)) / 100.0;
 
-            fix = static_cast<int>(incomingPacket[36]);
-            fix_quality = static_cast<int>(incomingPacket[37]);
-            satellites = static_cast<int>(incomingPacket[38]);
+            fix_ = static_cast<int>(incoming_packet_[o+26]);
+            fix_quality_ = static_cast<int>(incoming_packet_[o+27]);
+            satellites_ = static_cast<int>(incoming_packet_[o+28]);
+
+            tss_byte_ = incoming_packet_[o+29];
 
             return true;
         } //check PEC byte
@@ -131,64 +133,70 @@ bool HardwareCom::readController(){
     return false;
 }
 
-int HardwareCom::getCh(int channel) {
+int HardwareCom::get_dist_sensor_value(DistSensor sensor) {
+    int channel = static_cast<int>(sensor);
     int returnVal;
-    if(abs(channels_past[channel]-channels[channel])<maxDiff || channels_last_update_skipped[channel]){
+    if(abs(last_channels_[channel] - channels_[channel]) < max_diff_ || channels_last_update_skipped_[channel]){
         // Apply mild filtering
-        returnVal = static_cast<int>(round((channels_past[channel]+2*channels[channel])/3.0));
-        channels_past[channel] = returnVal;
-        channels_last_update_skipped[channel] = false;
+        returnVal = static_cast<int>(round((last_channels_[channel] + 2 * channels_[channel]) / 3.0));
+        last_channels_[channel] = returnVal;
+        channels_last_update_skipped_[channel] = false;
     } else {
         std::cout << "Value ignored" << std::endl;
-        returnVal = channels_past[channel];
+        returnVal = last_channels_[channel];
         // We dont want to skip more that once in a row
-        channels_last_update_skipped[channel] = true;
+        channels_last_update_skipped_[channel] = true;
     }
     return returnVal;
 }
 
-long HardwareCom::getEncoderLeft() {
-    return encoderLeft;
+long HardwareCom::get_left_encoder() const {
+    return encoder_left_;
 }
 
-long HardwareCom::getEncoderRight() {
-    return encoderRight;
+long HardwareCom::get_right_encoder() const {
+    return encoder_right_;
 }
 
-float HardwareCom::getLatitude(){
-    return latitude.number;
+float HardwareCom::get_latitude() const{
+    return latitude_.number;
 }
 
-float HardwareCom::getLongitude(){
-    return longitude.number;
+float HardwareCom::get_longitude() const{
+    return longitude_.number;
 }
 
-float HardwareCom::getHdop(){
-    return hdop.number;
+float HardwareCom::get_hdop() const{
+    return hdop_.number;
 }
 
 
-float HardwareCom::getSpeed(){
-    return speed;
+float HardwareCom::get_speed() const{
+    return speed_;
 }
 
-float HardwareCom::getAltitude(){
-    return altitude;
+float HardwareCom::get_altitude() const{
+    return altitude_;
 }
 
-float HardwareCom::getAngle(){
-    return angle;
+float HardwareCom::get_angle() const{
+    return angle_;
 }
 
-int HardwareCom::getFix(){
-    return fix;
+int HardwareCom::get_fix() const{
+    return fix_;
 }
 
-int HardwareCom::getFixQuality(){
-    return fix_quality;
+int HardwareCom::get_fix_quality() const{
+    return fix_quality_;
 }
 
-int HardwareCom::getNumSatellites(){
-    return satellites;
+int HardwareCom::get_num_satellites() const{
+    return satellites_;
 }
+
+bool HardwareCom::tss_has_collision(TSS section) const {
+    return static_cast<bool>(tss_byte_ & (1 << static_cast<int>(section)));
+}
+
 

@@ -309,7 +309,7 @@ Serial::SerialImpl::reconfigurePort ()
     // Starting with Tiger, the IOSSIOSPEED ioctl can be used to set arbitrary baud rates
     // other than those specified by POSIX. The driver for the underlying serial hardware
     // ultimately determines which baud rates can be used. This ioctl sets both the input
-    // and output speed.
+    // and output speed_.
     speed_t new_baud = static_cast<speed_t> (baudrate_);
     if (-1 == ioctl (fd_, IOSSIOSPEED, &new_baud, 1)) {
       THROW (IOException, errno);
