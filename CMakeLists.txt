@@ -18,6 +18,11 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+
+
 
 add_executable(br_hw_node
         src/br_hw_node.cpp
@@ -26,6 +31,7 @@ add_executable(br_hw_node
         src/gpio.cpp
         src/serial.cpp
         src/unix.cpp
+        src/pid.cpp
         )
 
 include_directories(br_hw_node
@@ -34,6 +40,8 @@ include_directories(br_hw_node
 ament_target_dependencies(br_hw_node
         rclcpp
         std_msgs
+        sensor_msgs
+        geometry_msgs
 )
 
 install(TARGETS br_hw_node
