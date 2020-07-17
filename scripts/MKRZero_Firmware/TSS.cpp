@@ -1,14 +1,10 @@
 #include "Arduino.h"
 #include "TSS.h"
-#include <Wire.h>
-#define serial SerialUSB //uncomment one of these depending on what serial command the board uses
-//#define serial Serial
-
 //class SmartArray is put int the .cpp because it only needs to be accessed internally by the library
 //and not by the end user
 class SmartArray { //array class used to produce running average to compare current sensor reading to. At size 2,000, it is averaging over ~1 second
   public:
-    SmartArray() {}
+    SmartArray() { }
     unsigned long get_element(unsigned int index) {
       return arr[(index + current_index_) % array_size_];
     }
@@ -51,35 +47,6 @@ class SmartArray { //array class used to produce running average to compare curr
 
 SmartArray left, right; //two instances of the SmartArray to handle the left and right sensors
 
-void TSS::graph()
-{
-  if (right_newval()) //if there's a new sensor value...
-  {
-    serial.println(filter_rightval());  //print the filtered value to remove some noise
-    serial.print("  "); //spaces for the serial plotter 
-    serial.print(right_getaverage()); //print running average
-    serial.print("  ");
-    serial.print(rightimpactThreshold()); //print trigger value
-    serial.print("  ");
-    serial.print(rightreleaseThreshold()); //print trigger value
-    serial.print("  ");
-  }
-
-  if (left_newval())
-  {
-    serial.print(filter_leftval());
-    serial.print("  ");
-    serial.print(left_getaverage());
-    serial.print("  ");
-    serial.print(leftimpactThreshold());
-    serial.print("  ");
-    serial.print(leftreleaseThreshold());
-    serial.print("  ");
-
-  }
-  return;
-}
-
 bool TSS::r_impact()
 {
   right_newval();
@@ -106,22 +73,22 @@ bool TSS::l_impact()
 
 void TSS::send_cmd(char addr, byte aCMD)  //send command to sensor
 {
-  Wire.beginTransmission(addr);
-  Wire.write(aCMD);
-  Wire.endTransmission(true);
+ wire2.beginTransmission(addr);
+ wire2.write(aCMD);
+ wire2.endTransmission(true);
 }
 
 bool TSS::sensor_connect(char addr) { //connect to sensor
-  Wire.beginTransmission(addr);
-  return Wire.endTransmission(true);
+ wire2.beginTransmission(addr);
+  return wire2.endTransmission(true);
 }
 
 void TSS::read_sensor_value(char addr, unsigned long& value) { //read sensor value
-  Wire.requestFrom(addr, 3);
-  value = (Wire.read() << 16);
-  value = value | (Wire.read() << 8);
-  value = value | Wire.read();
-  Wire.endTransmission(true);
+  wire2.requestFrom(addr, 3);
+  value = (wire2.read() << 16);
+  value = value | (wire2.read() << 8);
+  value = value | wire2.read();
+  wire2.endTransmission(true);
 }
 
 bool TSS::init_sensor(char addr) { //initialize sensor

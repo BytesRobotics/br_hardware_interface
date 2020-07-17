@@ -3,7 +3,7 @@
 #include "Wire.h"
 #include <Adafruit_GPS.h>
 #include <Servo.h>
-TSS tube; //create an instance of the TSS library for our tube
+TSS tube; //create an instance of the TSS library for each section of our tube
 unsigned long lastloop = 0;
 
 // https://tutorial.cytron.io/2015/04/05/using-mdd10a-arduino-uno/
@@ -24,8 +24,8 @@ typedef union
 
 // GPS config
 // https://github.com/adafruit/Adafruit_GPS/blob/master/Adafruit_GPS.h
-#define GPSSerial Serial1
-Adafruit_GPS GPS(&GPSSerial);
+//#define GPSSerial Serial1
+//Adafruit_GPS GPS(&GPSSerial);
 
 // Distance sensor config
 // The ultrasonic sensors require a 10 micro-second pulse to trigger every `timeout length seconds`
@@ -37,7 +37,7 @@ Adafruit_GPS GPS(&GPSSerial);
 // Definitions for the rotary encoder
 // https://youtu.be/V1txmR8GXzE
 #define left_wheel_encoder_b_pin 20 //PA06
-#define right_wheel_encoder_b_pin 15 //PA02, 10 needs to be switched back to 5
+#define right_wheel_encoder_b_pin 15 //PA02
 
 // count the total number of pulses since the start of tracking
 volatile long left_wheel_pulses = 0;
@@ -45,13 +45,13 @@ volatile long right_wheel_pulses = 0;
 
 
 // Control config
-#define left_wheel_speed_pin 6 //PA20
+#define left_wheel_speed_pin 0 //PA22
 int left_wheel_cmd = 0;
 #define left_wheel_dir_pin 38 //PA13
 
-#define right_wheel_speed_pin 10 //PA18
+#define right_wheel_speed_pin 10 //PA19
 int right_wheel_cmd = 0;
-#define right_wheel_dir_pin 3 //PA09
+#define right_wheel_dir_pin 3 //PA10
 
 int head_servo_cmd = 0;
 Servo head_servo;
@@ -134,7 +134,7 @@ void ch11_falling_interrupt();
 void left_wheel_encoder_interrupt();
 void right_wheel_encoder_interrupt();
 
-void config_pwm();
+void config_pwm(); //starts PWM for ultrasonic trig pin
 
 //Function for converting input (-1000 to 1000) to microseconds (1000 to 2000)
 inline int calculateHardwareValues(int input) {
@@ -151,14 +151,11 @@ inline int twosComp(int input) {
   }
 }
 
-//Modified attachInterrupt() function that allows us to specify port and pad number, defined in CustomInterrupts.ino
-void attachInterrupt(uint32_t port, uint32_t pin, uint32_t extint, voidFuncPtr callback, uint32_t mode); //Port, pin, interrupt number (ex: PA17 is 0, 17, 1)
-
 void setup() {
-  Wire.begin(); //begin I2C communication for TSS
-  Wire.setClock(400000);
-  SerialUSB.begin(115200);
-  GPSSerial.begin(9600);
+  tube.wire1.begin(); //begin I2C communication for TSS
+  tube.wire1.setClock(400000);
+  Serial.begin(115200);
+  //GPSSerial.begin(9600);
 
   //initialize right and left sensors
   tube.init_sensor(0x77);
@@ -172,10 +169,14 @@ void setup() {
 
   // Configure left and right wheel PWM, dir, and encoder
   //  pinMode(right_wheel_encoder_a_pin, INPUT_PULLUP);
-    pinMode(right_wheel_encoder_b_pin, INPUT_PULLUP);
+  pinMode(right_wheel_encoder_b_pin, INPUT_PULLUP);
   //  pinMode(left_wheel_encoder_a_pin, INPUT_PULLUP);
-    pinMode(left_wheel_encoder_b_pin, INPUT_PULLUP);
+  pinMode(left_wheel_encoder_b_pin, INPUT_PULLUP);
 
+
+  //Modified attachInterrupt() function that allows us to specify port and pad number, defined in CustomInterrupts.ino
+  void attachInterrupt(uint32_t port, uint32_t pin, uint32_t extint, voidFuncPtr callback, uint32_t mode); //Port, pin, interrupt number (ex: PA17 is 0, 17, 1)
+  
   attachInterrupt(1, 8, 8, right_wheel_encoder_interrupt, RISING); //Wheel encoder A on PB08
   attachInterrupt(0, 12, 12, left_wheel_encoder_interrupt, RISING); //Ender B on PA12
 
@@ -210,22 +211,22 @@ void setup() {
 
   //Start GPS unit
   // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
-  GPS.begin(9600);
-  GPS.sendCommand("$PMTK251,19200*22"); //Set the GPS baud rate to 19200
-  GPSSerial.flush();
-  GPSSerial.end();
-  GPS.begin(19200);
+  //  GPS.begin(9600);
+  //  GPS.sendCommand("$PMTK251,19200*22"); //Set the GPS baud rate to 19200
+  //  GPSSerial.flush();
+  //  GPSSerial.end();
+  //  GPS.begin(19200);
 
   // http://aprs.gids.nl/nmea/
   // Turn on RMC (recommended minimum) and GGA (fix data including HDOP) including altitude
-  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-  // Set the update rate
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ); // 5 Hz update rate (this is only the echo rate)
-  GPS.sendCommand(PMTK_API_SET_FIX_CTL_1HZ); // Fix at 1Hz to work with SBAS and Easy Mode (see PMTK datasheet for more info)
-
-  // Enable all GPS correction data types SBAS and WAAS
-  GPS.sendCommand(PMTK_ENABLE_SBAS);
-  GPS.sendCommand(PMTK_ENABLE_WAAS);
+  //  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+  //  // Set the update rate
+  //  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ); // 5 Hz update rate (this is only the echo rate)
+  //  GPS.sendCommand(PMTK_API_SET_FIX_CTL_1HZ); // Fix at 1Hz to work with SBAS and Easy Mode (see PMTK datasheet for more info)
+  //
+  //  // Enable all GPS correction data types SBAS and WAAS
+  //  GPS.sendCommand(PMTK_ENABLE_SBAS);
+  //  GPS.sendCommand(PMTK_ENABLE_WAAS);
 
   while (!Serial); //Wait to connect to computer
 
@@ -234,39 +235,62 @@ void setup() {
   lastPacket = millis(); //start watchdog timer for the first packet
 
 }
+void graph_it() {
+  if (tube.right_newval()) //if there's a new sensor value...
+  {
+    Serial.println(tube.filter_rightval());  //print the filtered value to remove some noise
+    Serial.print("  "); //spaces for the Serial plotter
+    Serial.print(tube.right_getaverage()); //print running average
+    Serial.print("  ");
+    Serial.print(tube.rightimpactThreshold()); //print trigger value
+    Serial.print("  ");
+    Serial.print(tube.rightreleaseThreshold()); //print trigger value
+    Serial.print("  ");
+  }
+
+  if (tube.left_newval())
+  {
+    Serial.print(tube.filter_leftval());
+    Serial.print("  ");
+    Serial.print(tube.left_getaverage());
+    Serial.print("  ");
+    Serial.print(tube.leftimpactThreshold());
+    Serial.print("  ");
+    Serial.print(tube.leftreleaseThreshold());
+    Serial.print("  ");
+
+  }
+  return;
+}
 
 void loop() {
+  //  if (millis() - lastloop > 100) { //wait 1000 millis to print again, but don't hold up the CPU
+  //    //Serial.println("GPS seconds: " + GPS.seconds, DEC);
+  //    Serial.println("CH0: " + String(ch0_duty_cycle));
+  //    Serial.println("CH1: " + String(ch1_duty_cycle));
+  //    Serial.println("CH2: " + String(ch2_duty_cycle));
+  //    Serial.println("CH3: " + String(ch3_duty_cycle));
+  //    Serial.println("CH4: " + String(ch4_duty_cycle));
+  //    Serial.println("CH5: " + String(ch5_duty_cycle));
+  //    Serial.println("CH6: " + String(ch6_duty_cycle));
+  //    Serial.println("CH7: " + String(ch7_duty_cycle));
+  //    Serial.println("CH8: " + String(ch8_duty_cycle));
+  //    Serial.println("CH9: " + String(ch9_duty_cycle));
+  //    Serial.println("CH10: " + String(ch10_duty_cycle));
+  //    Serial.println("CH11: " + String(ch11_duty_cycle));
+  //    Serial.println("Left wheel position: " + String(left_wheel_pulses));
+  //    Serial.println("Right wheel position: " + String(right_wheel_pulses));
   //
-  //  if (tube.l_impact() == true) {
-  //    Serial.println("left impact");
+  //    if (tube.left_newval()) {
+  //      Serial.println("Left impact: " + String(tube.l_impact()));
+  //    }
+  //
+  //    Serial.println();
+  //    lastloop = millis();
   //  }
-  //  Serial.println("Looping!");
-
-  //  if (tube.r_impact()) {
-  //Serial.println("impact");
-  if (millis() - lastloop > 100) { //wait 1000 millis to print again, but don't hold up the CPU
-    //Serial.println("GPS seconds: " + GPS.seconds, DEC);
-    Serial.println("CH0: " + String(ch0_duty_cycle));
-    Serial.println("CH1: " + String(ch1_duty_cycle));
-    Serial.println("CH2: " + String(ch2_duty_cycle));
-    Serial.println("CH3: " + String(ch3_duty_cycle));
-    Serial.println("CH4: " + String(ch4_duty_cycle));
-    Serial.println("CH5: " + String(ch5_duty_cycle));
-    Serial.println("CH6: " + String(ch6_duty_cycle));
-    Serial.println("CH7: " + String(ch7_duty_cycle));
-    Serial.println("CH8: " + String(ch8_duty_cycle));
-    Serial.println("CH9: " + String(ch9_duty_cycle));
-    Serial.println("CH10: " + String(ch10_duty_cycle));
-    Serial.println("CH11: " + String(ch11_duty_cycle));
-    Serial.println("Left wheel position: " + String(left_wheel_pulses));
-    Serial.println("Right wheel position: " + String(right_wheel_pulses));
-    Serial.println();
-    lastloop = millis();
-  }
-  //  Serial.println("Wheel position: " + String(right_wheel_pulses));
-  //  Serial.println();
-  // }
-  //
+  noInterrupts();
+  graph_it();
+  interrupts();
   //  now = millis(); //get current time to  ensure connection to main controller
   //
   //  if (wdt_isTripped || now - lastPacket > 500) { //If the contorller hasn't recived a new packet in half a second (short circuit limits calcs)
