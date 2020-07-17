@@ -96,7 +96,7 @@ bool HardwareCom::readController(){
         if(pec == static_cast<uint8_t>(incomingPacket[incomingPacketLength-1])){
 //            std::cout << "PEC Correct\n";
             //Fill in channel array with distance sensor values
-            for(int i =0; i<8; i+=2){channels[i/2] = static_cast<int>(incomingPacket[i] | (incomingPacket[i+1]<<8));}
+            for(int i =0; i<10; i+=2){channels[i/2] = static_cast<int>(incomingPacket[i] | (incomingPacket[i+1]<<8));}
 
             encoderLeft = static_cast<int>(incomingPacket[10] | (incomingPacket[11]<<8) | (incomingPacket[12]<<16) | (incomingPacket[13]<<24));
             encoderRight = static_cast<int>(incomingPacket[14] | (incomingPacket[15]<<8) | (incomingPacket[16]<<16) | (incomingPacket[17]<<24));
@@ -131,24 +131,20 @@ bool HardwareCom::readController(){
     return false;
 }
 
-int HardwareCom::getCh1() {
-    return channels[0];
-}
-
-int HardwareCom::getCh2() {
-    return channels[1];
-}
-
-int HardwareCom::getCh3() {
-    return channels[2];
-}
-
-int HardwareCom::getCh4() {
-    return channels[3];
-}
-
-int HardwareCom::getCh5() {
-    return channels[4];
+int HardwareCom::getCh(int channel) {
+    int returnVal;
+    if(abs(channels_past[channel]-channels[channel])<maxDiff || channels_last_update_skipped[channel]){
+        // Apply mild filtering
+        returnVal = static_cast<int>(round((channels_past[channel]+2*channels[channel])/3.0));
+        channels_past[channel] = returnVal;
+        channels_last_update_skipped[channel] = false;
+    } else {
+        std::cout << "Value ignored" << std::endl;
+        returnVal = channels_past[channel];
+        // We dont want to skip more that once in a row
+        channels_last_update_skipped[channel] = true;
+    }
+    return returnVal;
 }
 
 long HardwareCom::getEncoderLeft() {

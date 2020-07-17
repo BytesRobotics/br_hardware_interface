@@ -199,7 +199,7 @@ namespace br_hardware_interface
                 last_left_encoder_read = ros::Time::now().toSec();
                 last_left_encoder_position = joint_position_[i];
             } else if (joint_names_[i] == "right_wheel_joint") {
-                encoder_position = -1*connection.getEncoderRight()/encoder_ticks_per_rot*2*M_PI;
+                encoder_position = -connection.getEncoderRight()/encoder_ticks_per_rot*2*M_PI;
                 ROS_DEBUG_STREAM("right encoder value: " << encoder_position);
                 if(is_first_pass){right_encoder_zero = encoder_position;}
                 //sanity check to eliminate rogue values
@@ -222,21 +222,21 @@ namespace br_hardware_interface
         dist.header.stamp = ros::Time::now();
         dist.field_of_view = 0.366519; //21 deg
         dist.min_range = 0.02;
-        dist.max_range = 4.00;
+        dist.max_range = 9.00;
 
-        dist.range = to_distance(connection.getCh1(), speed_of_sound);
+        dist.range = to_distance(connection.getCh(0), speed_of_sound);
         dist.header.frame_id = "front_dist_sensor";
         front_distance_pub.publish(dist);
-        dist.range = to_distance(connection.getCh4(), speed_of_sound);
+        dist.range = to_distance(connection.getCh(3), speed_of_sound);
         dist.header.frame_id = "rear_dist_sensor";
         rear_distance_pub.publish(dist);
-        dist.range = to_distance(connection.getCh3(), speed_of_sound);
+        dist.range = to_distance(connection.getCh(2), speed_of_sound);
         dist.header.frame_id = "right_dist_sensor";
         right_distance_pub.publish(dist);
-        dist.range = to_distance(connection.getCh2(), speed_of_sound);
+        dist.range = to_distance(connection.getCh(1), speed_of_sound);
         dist.header.frame_id = "left_dist_sensor";
         left_distance_pub.publish(dist);
-        dist.range = to_distance(connection.getCh5(), speed_of_sound);
+        dist.range = to_distance(connection.getCh(4), speed_of_sound);
         dist.header.frame_id = "bottom_dist_sensor";
         bottom_distance_pub.publish(dist);
 
