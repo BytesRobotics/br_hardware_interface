@@ -15,7 +15,7 @@ connection("/dev/ttyACM1", 115200)
     joint_states_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states",
             rclcpp::QoS(rclcpp::KeepLast(10)).durability_volatile().reliable());
 
-    cmd_vel_sub_ = this->create_subscription<std_msgs::msg::String>("cmd_vel", 10,
+    cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10,
             std::bind(&BRHardwareInterface::cmd_vel_cb, this, std::placeholders::_1));
 
     connection.set_controller(0, 0, 0);
