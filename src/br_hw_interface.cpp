@@ -6,9 +6,9 @@
 
 using namespace std::chrono_literals;
 
-BRHardwareInterface::BRHardwareInterface():
+BRHardwareInterface::BRHardwareInterface(const std::string& port):
 Node("hardware_interface"),
-connection("/dev/ttyACM1", 115200)
+connection(port, 115200)
 {
     configure_parameters();
 
@@ -29,7 +29,9 @@ connection("/dev/ttyACM1", 115200)
     initial_right_encoder_position_ = connection.get_right_encoder();
 
     /// Start reading from and updating the hardware controller
-    timer_ = this->create_wall_timer(20ms, std::bind(&BRHardwareInterface::update, this));
+    float frequency = this->declare_parameter("frequency", 50);
+    int delay = static_cast<int>(1.0/frequency*1000);
+    timer_ = this->create_wall_timer(std::chrono::milliseconds(delay), std::bind(&BRHardwareInterface::update, this));
 }
 
 void BRHardwareInterface::update()
@@ -70,6 +72,7 @@ void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time,
 
 void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time,
         std::chrono::steady_clock::time_point now) {
+
     /// Use PID and kinematics model to update motors
     double angular_velocity_left_setpoint;
     double angular_velocity_right_setpoint;
@@ -82,6 +85,8 @@ void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time
         angular_velocity_right_setpoint = (velocity_x_ + velocity_theta_/2)/(wheel_diameter_/2);
         angular_velocity_left_setpoint = (velocity_x_ - velocity_theta_/2)/(wheel_diameter_/2);
     }
+
+    /// Run PIDs
     auto right_cmd = last_right_motor_cmd_ + right_pid_.update(angular_velocity_right_setpoint - right_wheel_angular_velocity_, elapsed_time);
     auto left_cmd = last_left_motor_cmd_ + left_pid_.update(angular_velocity_left_setpoint - left_wheel_angular_velocity_, elapsed_time);
     last_right_motor_cmd_ = right_cmd;
@@ -94,17 +99,17 @@ void BRHardwareInterface::configure_parameters() {
     encoder_ticks_per_rot_ = this->declare_parameter("encoder_ticks_per_rot", 196);
     speed_of_sound_ = this->declare_parameter("speed_of_sound", 374.0);
     wheel_diameter_ = this->declare_parameter("wheel_diameter", 0.2032);
-    wheel_separation_ = this->declare_parameter("wheel_separation", 0.4096);
+    wheel_separation_ = this->declare_parameter("wheel_separation", 0.4118);
     left_wheel_joint_name_ = this->declare_parameter("left_wheel_joint_name", "left_wheel_joint");
     right_wheel_joint_name_ = this->declare_parameter("right_wheel_joint_name", "right_wheel_joint");
 
     double p = this->declare_parameter("pid_p", 0.1);
     left_pid_.set_p(p);
     right_pid_.set_p(p);
-    double i = this->declare_parameter("pid_i", 0.001);
+    double i = this->declare_parameter("pid_i", 0.0);
     left_pid_.set_i(i);
     right_pid_.set_i(i);
-    double d = this->declare_parameter("pid_d", 0.001);
+    double d = this->declare_parameter("pid_d", 0.0);
     left_pid_.set_d(d);
     right_pid_.set_d(d);
     double max_i = this->declare_parameter("pid_i_max", 5.0);

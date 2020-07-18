@@ -45,20 +45,20 @@ class BRHardwareInterface : public rclcpp::Node{
     rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
 
     /// Parameters
-    int encoder_ticks_per_rot_;
-    double speed_of_sound_;
-    double wheel_diameter_, wheel_separation_;
+    int encoder_ticks_per_rot_{};
+    double speed_of_sound_{};
+    double wheel_diameter_{}, wheel_separation_{};
     std::string left_wheel_joint_name_, right_wheel_joint_name_;
 
     /// State Variables
     long initial_left_encoder_position_, initial_right_encoder_position_;
     double last_left_encoder_position_, last_right_encoder_position_;
-    double left_wheel_angular_velocity_, right_wheel_angular_velocity_;
-    double velocity_x_, velocity_theta_; //! Set points from cmd_vel
-    double last_left_motor_cmd_, last_right_motor_cmd_;
+    double left_wheel_angular_velocity_{}, right_wheel_angular_velocity_{};
+    double velocity_x_{}, velocity_theta_{}; //! Set points from cmd_vel
+    double last_left_motor_cmd_{}, last_right_motor_cmd_{};
 
 public:
-    BRHardwareInterface();
+    explicit BRHardwareInterface(const std::string& port="/dev/ttyACM0");
 };
 
 #endif //BR_HARDWARE_INTERFACE_BR_HW_INTERFACE_H
