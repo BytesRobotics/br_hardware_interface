@@ -12,9 +12,26 @@ connection(port, 115200)
 {
     configure_parameters();
 
+    /// Publications
     joint_states_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states",
             rclcpp::QoS(rclcpp::KeepLast(10)).durability_volatile().reliable());
 
+    front_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>("distance/front", rclcpp::SensorDataQoS());
+    front_left_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>("distance/front_left", rclcpp::SensorDataQoS());
+    front_right_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>("distance/front_right", rclcpp::SensorDataQoS());
+    front_left_bottom_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>("distance/front_left_bottom", rclcpp::SensorDataQoS());
+    front_right_bottom_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>("distance/front_right_bottom", rclcpp::SensorDataQoS());
+    left_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>("distance/left", rclcpp::SensorDataQoS());
+    right_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>("distance/right", rclcpp::SensorDataQoS());
+    rear_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>("distance/rear", rclcpp::SensorDataQoS());
+    rear_left_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>("distance/rear_left", rclcpp::SensorDataQoS());
+    rear_right_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>("distance/rear_right", rclcpp::SensorDataQoS());
+    rear_left_bottom_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>("distance/rear_left_bottom", rclcpp::SensorDataQoS());
+    rear_right_bottom_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>("distance/rear_right_bottom", rclcpp::SensorDataQoS());
+
+    nav_sat_pub_ = this->create_publisher<sensor_msgs::msg::NavSatFix>("gps", rclcpp::SystemDefaultsQoS().transient_local());
+
+    /// Subscriptions
     cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10,
             std::bind(&BRHardwareInterface::cmd_vel_cb, this, std::placeholders::_1));
 
@@ -39,13 +56,15 @@ void BRHardwareInterface::update()
     auto now = std::chrono::steady_clock::now();
     std::chrono::steady_clock::duration elapsed_time = now - last_time_;
 
-    read(elapsed_time, now);
-    write(elapsed_time, now);
+    read(elapsed_time);
+    write(elapsed_time);
 
     last_time_ = now;
 }
 
-void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time, std::chrono::steady_clock::time_point now) {
+void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time) {
+    auto time_stamp = this->now();
+
     while(!connection.read_controller()){
         RCLCPP_DEBUG(this->get_logger(), "Could not read hardware controller from /dev/ttyACM0");
     }
@@ -57,7 +76,7 @@ void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time,
     right_wheel_angular_velocity_ = (right_encoder_position - last_right_encoder_position_)/elapsed_time.count();
 
     auto joint_states_msg = sensor_msgs::msg::JointState();
-    joint_states_msg.header.stamp = this->now();
+    joint_states_msg.header.stamp = time_stamp;
     joint_states_msg.name.push_back(left_wheel_joint_name_);
     joint_states_msg.position.push_back(left_encoder_position);
     joint_states_msg.velocity.push_back(left_wheel_angular_velocity_);
@@ -68,10 +87,90 @@ void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time,
 
     last_left_encoder_position_ = left_encoder_position;
     last_right_encoder_position_ = right_encoder_position;
+
+    /// Distance Sensors
+    auto dist_msg = sensor_msgs::msg::Range();
+    dist_msg.header.stamp = time_stamp;
+    dist_msg.radiation_type = sensor_msgs::msg::Range::ULTRASOUND;
+    dist_msg.field_of_view = 0.366519;
+    dist_msg.max_range = 9.0;
+    dist_msg.min_range = 0.02;
+
+    dist_msg.header.frame_id = "front_dist_sensor";
+    dist_msg.range = to_distance(connection.get_dist_sensor_value(DistSensor::front), speed_of_sound_);
+    front_dist_pub_->publish(dist_msg);
+
+    dist_msg.header.frame_id = "front_left_dist_sensor";
+    dist_msg.range = to_distance(connection.get_dist_sensor_value(DistSensor::front_left), speed_of_sound_);
+    front_left_dist_pub_->publish(dist_msg);
+
+    dist_msg.header.frame_id = "front_right_dist_sensor";
+    dist_msg.range = to_distance(connection.get_dist_sensor_value(DistSensor::front_right), speed_of_sound_);
+    front_right_dist_pub_->publish(dist_msg);
+
+    dist_msg.header.frame_id = "front_left_bottom_dist_sensor";
+    dist_msg.range = to_distance(connection.get_dist_sensor_value(DistSensor::front_left_bottom), speed_of_sound_);
+    front_left_bottom_dist_pub_->publish(dist_msg);
+
+    dist_msg.header.frame_id = "front_right_bottom_dist_sensor";
+    dist_msg.range = to_distance(connection.get_dist_sensor_value(DistSensor::front_right_bottom), speed_of_sound_);
+    front_right_bottom_dist_pub_->publish(dist_msg);
+
+    dist_msg.header.frame_id = "left_dist_sensor";
+    dist_msg.range = to_distance(connection.get_dist_sensor_value(DistSensor::left), speed_of_sound_);
+    left_dist_pub_->publish(dist_msg);
+
+    dist_msg.header.frame_id = "right_dist_sensor";
+    dist_msg.range = to_distance(connection.get_dist_sensor_value(DistSensor::right), speed_of_sound_);
+    right_dist_pub_->publish(dist_msg);
+
+    dist_msg.header.frame_id = "rear_dist_sensor";
+    dist_msg.range = to_distance(connection.get_dist_sensor_value(DistSensor::rear), speed_of_sound_);
+    rear_dist_pub_->publish(dist_msg);
+
+    dist_msg.header.frame_id = "rear_left_dist_sensor";
+    dist_msg.range = to_distance(connection.get_dist_sensor_value(DistSensor::rear_left), speed_of_sound_);
+    rear_left_dist_pub_->publish(dist_msg);
+
+    dist_msg.header.frame_id = "rear_right_dist_sensor";
+    dist_msg.range = to_distance(connection.get_dist_sensor_value(DistSensor::rear_right), speed_of_sound_);
+    rear_right_dist_pub_->publish(dist_msg);
+
+    dist_msg.header.frame_id = "rear_left_bottom_dist_sensor";
+    dist_msg.range = to_distance(connection.get_dist_sensor_value(DistSensor::rear_left_bottom), speed_of_sound_);
+    rear_left_bottom_dist_pub_->publish(dist_msg);
+
+    dist_msg.header.frame_id = "rear_right_bottom_dist_sensor";
+    dist_msg.range = to_distance(connection.get_dist_sensor_value(DistSensor::rear_right_bottom), speed_of_sound_);
+    rear_right_bottom_dist_pub_->publish(dist_msg);
+
+    /// GPS
+    if(connection.get_longitude() != last_longitude_ || connection.get_latitude() != last_latitude_ ||
+    connection.get_altitude() != last_altitude_){
+        auto nav_sat_msg = sensor_msgs::msg::NavSatFix();
+        nav_sat_msg.header.stamp = time_stamp;
+        nav_sat_msg.header.frame_id = "gps_link";
+        nav_sat_msg.latitude = connection.get_latitude();
+        nav_sat_msg.longitude = connection.get_longitude();
+        nav_sat_msg.altitude = connection.get_altitude();
+        nav_sat_msg.status.status = connection.get_fix_quality() - 1;
+        nav_sat_msg.status.service = 1;
+        auto hdop = connection.get_hdop();
+        nav_sat_msg.position_covariance[0] = 10.0*hdop;
+        nav_sat_msg.position_covariance[3] = 10.0*hdop;
+        nav_sat_msg.position_covariance[6] = 50.0;
+        nav_sat_msg.position_covariance_type = 2;
+        nav_sat_pub_->publish(nav_sat_msg);
+
+        last_longitude_ = connection.get_longitude();
+        last_latitude_ = connection.get_latitude();
+        last_altitude_ = connection.get_altitude();
+    }
+
+    /// TSS
 }
 
-void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time,
-        std::chrono::steady_clock::time_point now) {
+void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time) {
 
     /// Use PID and kinematics model to update motors
     double angular_velocity_left_setpoint;
@@ -87,8 +186,8 @@ void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time
     }
 
     /// Run PIDs
-    auto right_cmd = last_right_motor_cmd_ + right_pid_.update(angular_velocity_right_setpoint - right_wheel_angular_velocity_, elapsed_time);
-    auto left_cmd = last_left_motor_cmd_ + left_pid_.update(angular_velocity_left_setpoint - left_wheel_angular_velocity_, elapsed_time);
+    double right_cmd = std::max(std::min(last_right_motor_cmd_ + right_pid_.update(angular_velocity_right_setpoint - right_wheel_angular_velocity_, elapsed_time), -1.0), 1.0);
+    auto left_cmd = std::max(std::min(last_left_motor_cmd_ + left_pid_.update(angular_velocity_left_setpoint - left_wheel_angular_velocity_, elapsed_time), -1.0), 1.0);
     last_right_motor_cmd_ = right_cmd;
     last_left_motor_cmd_ = left_cmd;
 

@@ -1,35 +1,5 @@
 #include "usb_hw_interface/arduino_com.h"
 
-/**
-* @breif constrians value between min and max inclusive. Value is returned by reference.
-* @param[in,out] value input to be constrianed
-* @param[in] min The minimum value that "value" should be able to be
-* @param[in] max The maximum value that "value" should be able to be
-*/
-template <class T>
-void constrain(T &value, T min, T max){
-    if(value > max){
-        value = max;
-    } else if(value < min){
-        value = min;
-    }
-}
-
-/**
-* @breif returns a number mapped proportioanlly from one range of numbers to another
-* @param[in] input Value to be mapped
-* @param[in] inMax The maximum value for the range of the input
-* @param[in] inMin The minimum value for the range of the input
-* @param[in] outMin The minimum value for the range of the output
-* @param[in] outMax The maximum value for the range of the output
-* @return The input trnslated proportionally from range in to range out
-*/
-template <class T>
-T map(T input, T inMin, T inMax, T outMin, T outMax){
-    T output = (input - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-    return output;
-}
-
 HardwareCom::HardwareCom(const std::string& port, int baud):
         connection_(port, baud, serial::Timeout::simpleTimeout(10),
                     serial::eightbits, serial::parity_even, serial::stopbits_one)
@@ -142,7 +112,7 @@ int HardwareCom::get_dist_sensor_value(DistSensor sensor) {
         last_channels_[channel] = returnVal;
         channels_last_update_skipped_[channel] = false;
     } else {
-        std::cout << "Value ignored" << std::endl;
+//        std::cout << "Value ignored" << std::endl;
         returnVal = last_channels_[channel];
         // We dont want to skip more that once in a row
         channels_last_update_skipped_[channel] = true;
