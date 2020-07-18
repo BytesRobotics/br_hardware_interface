@@ -5,6 +5,7 @@
 #include <Servo.h>
 TSS tube; //create an instance of the TSS library for each section of our tube
 unsigned long lastloop = 0;
+int TSS_states = 0;
 
 // https://tutorial.cytron.io/2015/04/05/using-mdd10a-arduino-uno/
 // https://www.amazon.com/Cytron-Dual-Channel-Motor-Driver/dp/B07CW34YRB/ref=sr_1_6?keywords=Cytron+10A+5-30V+Dual+Channel+DC+Motor+Driver&qid=1574466884&sr=8-6
@@ -24,8 +25,8 @@ typedef union
 
 // GPS config
 // https://github.com/adafruit/Adafruit_GPS/blob/master/Adafruit_GPS.h
-//#define GPSSerial Serial1
-//Adafruit_GPS GPS(&GPSSerial);
+#define GPSSerial Serial1
+Adafruit_GPS GPS(&GPSSerial);
 
 // Distance sensor config
 // The ultrasonic sensors require a 10 micro-second pulse to trigger every `timeout length seconds`
@@ -51,10 +52,10 @@ int left_wheel_cmd = 0;
 
 #define right_wheel_speed_pin 10 //PA19
 int right_wheel_cmd = 0;
-#define right_wheel_dir_pin 3 //PA10
+#define right_wheel_dir_pin 2 //PA10
 
-int head_servo_cmd = 0;
-Servo head_servo;
+//int head_servo_cmd = 0;
+//Servo head_servo;
 //#define head_servo_pin 12 //no servo on bytes
 
 //For serial event
@@ -70,7 +71,7 @@ boolean wdt_isTripped = false; //so  the timer is not tripped continuously
 //For sending packet
 unsigned long lastSend = 0;
 unsigned long sendPeriod = 20000; //in microsoconds (1/Hz*1000000)
-const int outGoingPacketLength = 40;
+const int outGoingPacketLength = 55;
 //Outgoing packet structure: |ch1 LSB|ch1 MSB|ch2 LSB|ch2 MSB|ch3 LSB|ch3 MSB|ch4 LSB|ch4 MSB|ch5 LSB|ch5 MSB|
 // |encoder_left LSB|encoder_left|encoder_left|encoder_left MSB|
 // |encoder_right LSB|encoder_right|encoder_right|encoder_right MSB|
@@ -152,20 +153,20 @@ inline int twosComp(int input) {
 }
 
 void setup() {
-  tube.wire1.begin(); //begin I2C communication for TSS
-  tube.wire1.setClock(400000);
+  //  tube.wire1.begin(); //begin I2C communication for TSS
+  //  tube.wire1.setClock(400000);
   Serial.begin(115200);
-  //GPSSerial.begin(9600);
+  GPSSerial.begin(9600);
 
   //initialize right and left sensors
-  tube.init_sensor(0x77);
-  tube.init_sensor(0x76);
-
-  tube.send_cmd(0x76, MS5xxx_CMD_RESET);//reset sensors
-  tube.send_cmd(0x77, MS5xxx_CMD_RESET);
-
-  tube.setImpactThreshold(3000);//sets how much the pressure has to increase before an impact event is triggered
-  tube.setReleaseThreshold(2500);//sets how much the pressure has to decrease before a release event is triggered
+  //  tube.init_sensor(0x77);
+  //  tube.init_sensor(0x76);
+  //
+  //  tube.send_cmd(0x76, MS5xxx_CMD_RESET);//reset sensors
+  //  tube.send_cmd(0x77, MS5xxx_CMD_RESET);
+  //
+  //  tube.setImpactThreshold(3000);//sets how much the pressure has to increase before an impact event is triggered
+  //  tube.setReleaseThreshold(2500);//sets how much the pressure has to decrease before a release event is triggered
 
   // Configure left and right wheel PWM, dir, and encoder
   //  pinMode(right_wheel_encoder_a_pin, INPUT_PULLUP);
@@ -176,7 +177,7 @@ void setup() {
 
   //Modified attachInterrupt() function that allows us to specify port and pad number, defined in CustomInterrupts.ino
   void attachInterrupt(uint32_t port, uint32_t pin, uint32_t extint, voidFuncPtr callback, uint32_t mode); //Port, pin, interrupt number (ex: PA17 is 0, 17, 1)
-  
+
   attachInterrupt(1, 8, 8, right_wheel_encoder_interrupt, RISING); //Wheel encoder A on PB08
   attachInterrupt(0, 12, 12, left_wheel_encoder_interrupt, RISING); //Ender B on PA12
 
@@ -210,23 +211,23 @@ void setup() {
   //pinMode(LED_BUILTIN, OUTPUT);
 
   //Start GPS unit
-  // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
-  //  GPS.begin(9600);
-  //  GPS.sendCommand("$PMTK251,19200*22"); //Set the GPS baud rate to 19200
-  //  GPSSerial.flush();
-  //  GPSSerial.end();
-  //  GPS.begin(19200);
+   //9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
+    GPS.begin(9600);
+    GPS.sendCommand("$PMTK251,19200*22"); //Set the GPS baud rate to 19200
+    GPSSerial.flush();
+    GPSSerial.end();
+    GPS.begin(19200);
 
   // http://aprs.gids.nl/nmea/
   // Turn on RMC (recommended minimum) and GGA (fix data including HDOP) including altitude
-  //  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+    GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   //  // Set the update rate
-  //  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ); // 5 Hz update rate (this is only the echo rate)
-  //  GPS.sendCommand(PMTK_API_SET_FIX_CTL_1HZ); // Fix at 1Hz to work with SBAS and Easy Mode (see PMTK datasheet for more info)
-  //
+    GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ); // 5 Hz update rate (this is only the echo rate)
+    GPS.sendCommand(PMTK_API_SET_FIX_CTL_1HZ); // Fix at 1Hz to work with SBAS and Easy Mode (see PMTK datasheet for more info)
+  
   //  // Enable all GPS correction data types SBAS and WAAS
-  //  GPS.sendCommand(PMTK_ENABLE_SBAS);
-  //  GPS.sendCommand(PMTK_ENABLE_WAAS);
+    GPS.sendCommand(PMTK_ENABLE_SBAS);
+    GPS.sendCommand(PMTK_ENABLE_WAAS);
 
   while (!Serial); //Wait to connect to computer
 
@@ -235,7 +236,7 @@ void setup() {
   lastPacket = millis(); //start watchdog timer for the first packet
 
 }
-void graph_it() {
+void TTS_graph_it() {
   if (tube.right_newval()) //if there's a new sensor value...
   {
     Serial.println(tube.filter_rightval());  //print the filtered value to remove some noise
@@ -264,160 +265,154 @@ void graph_it() {
 }
 
 void loop() {
-  //  if (millis() - lastloop > 100) { //wait 1000 millis to print again, but don't hold up the CPU
-  //    //Serial.println("GPS seconds: " + GPS.seconds, DEC);
-  //    Serial.println("CH0: " + String(ch0_duty_cycle));
-  //    Serial.println("CH1: " + String(ch1_duty_cycle));
-  //    Serial.println("CH2: " + String(ch2_duty_cycle));
-  //    Serial.println("CH3: " + String(ch3_duty_cycle));
-  //    Serial.println("CH4: " + String(ch4_duty_cycle));
-  //    Serial.println("CH5: " + String(ch5_duty_cycle));
-  //    Serial.println("CH6: " + String(ch6_duty_cycle));
-  //    Serial.println("CH7: " + String(ch7_duty_cycle));
-  //    Serial.println("CH8: " + String(ch8_duty_cycle));
-  //    Serial.println("CH9: " + String(ch9_duty_cycle));
-  //    Serial.println("CH10: " + String(ch10_duty_cycle));
-  //    Serial.println("CH11: " + String(ch11_duty_cycle));
-  //    Serial.println("Left wheel position: " + String(left_wheel_pulses));
-  //    Serial.println("Right wheel position: " + String(right_wheel_pulses));
-  //
-  //    if (tube.left_newval()) {
-  //      Serial.println("Left impact: " + String(tube.l_impact()));
-  //    }
-  //
-  //    Serial.println();
-  //    lastloop = millis();
-  //  }
-  noInterrupts();
-  graph_it();
-  interrupts();
-  //  now = millis(); //get current time to  ensure connection to main controller
-  //
-  //  if (wdt_isTripped || now - lastPacket > 500) { //If the contorller hasn't recived a new packet in half a second (short circuit limits calcs)
-  //    left_wheel_cmd = 0;
-  //    right_wheel_cmd = 0;
-  //
-  //    if (wdt_isTripped == false) {
-  //      //Serial.println("Drive controller watchdog tripped!");
-  //    }
-  //    wdt_isTripped = true;
-  //  }
+  //debug code
+//  if (millis() - lastloop > 100) { //wait 1000 millis to print again, but don't hold up the CPU
+//    //Serial.println("GPS seconds: " + GPS.seconds, DEC);
+//    Serial.println("CH0: " + String(ch0_duty_cycle));
+//    Serial.println("CH1: " + String(ch1_duty_cycle));
+//    Serial.println("CH2: " + String(ch2_duty_cycle));
+//    Serial.println("CH3: " + String(ch3_duty_cycle));
+//    Serial.println("CH4: " + String(ch4_duty_cycle));
+//    Serial.println("CH5: " + String(ch5_duty_cycle));
+//    Serial.println("CH6: " + String(ch6_duty_cycle));
+//    Serial.println("CH7: " + String(ch7_duty_cycle));
+//    Serial.println("CH8: " + String(ch8_duty_cycle));
+//    Serial.println("CH9: " + String(ch9_duty_cycle));
+//    Serial.println("CH10: " + String(ch10_duty_cycle));
+//    Serial.println("CH11: " + String(ch11_duty_cycle));
+//    Serial.println("Left wheel position: " + String(left_wheel_pulses));
+//    Serial.println("Right wheel position: " + String(right_wheel_pulses));
+//
+//    Serial.println();
+//    lastloop = millis();
+//  }
+  now = millis(); //get current time to  ensure connection to main controller
+
+  if (wdt_isTripped || now - lastPacket > 500) { //If the contorller hasn't recived a new packet in half a second (short circuit limits calcs)
+    left_wheel_cmd = 0;
+    right_wheel_cmd = 0;
+
+    if (wdt_isTripped == false) {
+      //Serial.println("Drive controller watchdog tripped!");
+    }
+    wdt_isTripped = true;
+  }
 
   // When a new packet arrives indicated by a newline '\n' char:
-  //  if (packetComplete) {      //If packet is valid
-  //    //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|head servo MSB|head servo LSB|
-  //    left_wheel_cmd = calculateHardwareValues(twosComp((packet[5] << 8) | packet[4]));
-  //    right_wheel_cmd = calculateHardwareValues(twosComp((packet[3] << 8) | packet[2]));
-  //    head_servo_cmd = constrain(map(twosComp((packet[1] << 8) | packet[0]), -1000, 1000, 1000, 2000), 1000, 2000);
+  if (packetComplete) {      //If packet is valid
+    //Packet structure = |PEC|left wheel MSB|left wheel LSB|right wheel MSB|right wheel LSB|head servo MSB|head servo LSB|
+    left_wheel_cmd = calculateHardwareValues(twosComp((packet[5] << 8) | packet[4]));
+    right_wheel_cmd = calculateHardwareValues(twosComp((packet[3] << 8) | packet[2]));
+    //head_servo_cmd = constrain(map(twosComp((packet[1] << 8) | packet[0]), -1000, 1000, 1000, 2000), 1000, 2000);
 
-  //      Serial.println(packet, BIN);      //DEBUG
-  //
-  //      Serial.println(left_wheel_cmd, BIN); //DEBUG
-  //      Serial.println(left_wheel_cmd);      //DEBUG
-  //      Serial.println(right_wheel_cmd, BIN); //DEBUG
-  //      Serial.println(right_wheel_cmd);      //DEBUG
+    lastPacket = millis(); //Pet the watchdog timer
+    wdt_isTripped = false;
 
-  //    lastPacket = millis(); //Pet the watchdog timer
-  //    wdt_isTripped = false;
+    // clear the packet:
+    for (int i = 0; i < packetLength; i++) {
+      packet[i] = 0;
+    }
+    packetComplete = false;
+  }
 
-  // clear the packet:
-  //    for (int i = 0; i < packetLength; i++) {
-  //      packet[i] = 0;
-  //    }
-  //    packetComplete = false;
-  //  }
+  //update wheels to new values
+  digitalWrite(left_wheel_dir_pin, (left_wheel_cmd > 0));
+  analogWrite(left_wheel_speed_pin, abs(left_wheel_cmd));
+  digitalWrite(right_wheel_dir_pin, (right_wheel_cmd > 0));
+  analogWrite(right_wheel_speed_pin, abs(right_wheel_cmd));
+  //head_servo.writeMicroseconds(head_servo_cmd);
 
-  // update wheels to new vlaues
-  //  digitalWrite(left_wheel_dir_pin, (left_wheel_cmd > 0));
-  //  analogWrite(left_wheel_speed_pin, abs(left_wheel_cmd));
-  //  digitalWrite(right_wheel_dir_pin, (right_wheel_cmd > 0));
-  //  analogWrite(right_wheel_speed_pin, abs(right_wheel_cmd));
-  //  head_servo.writeMicroseconds(head_servo_cmd);
-  //
-  //  char c = GPS.read();
-  //  if (GPS.newNMEAreceived()) {
-  //    GPS.parse(GPS.lastNMEA());
-  //  }
-  //
-  //  //Send packet to computer
-  //  if (micros() - lastSend > sendPeriod) {
-  //Outgoing packet structure: |ch1 LSB|ch1 MSB|ch2 LSB|ch2 MSB|ch3 LSB|ch3 MSB|ch4 LSB|ch4 MSB|ch5 LSB|ch5 MSB|
-  // |encoder_left LSB|encoder_left|encoder_left|encoder_left MSB|
-  // |encoder_right LSB|encoder_right|encoder_right|encoder_right MSB|
-  // |lat LSB|lat|lat|lat MSB|
-  // |lon LSB|lon|lon|lon MSB|
-  // |speed LSB|speed MSB|angle LSB|angle MSB|altitude LSB|altitude MSB|
-  // |fix|fix quality|num satelites|
-  // |PEC|
-  //  byte outGoingPacket[outGoingPacketLength];
-  //Sends channel duty cycles to topside in microseconds for later calculation of distance
-  //    outGoingPacket[0] = (byte)(ch1_duty_cycle & 0b0000000011111111);
-  //    outGoingPacket[1] = (byte)(ch1_duty_cycle >> 8);
-  //    outGoingPacket[2] = (byte)(ch2_duty_cycle & 0b0000000011111111);
-  //    outGoingPacket[3] = (byte)(ch2_duty_cycle >> 8);
-  //    outGoingPacket[4] = (byte)(ch3_duty_cycle & 0b0000000011111111);
-  //    outGoingPacket[5] = (byte)(ch3_duty_cycle >> 8);
-  //    outGoingPacket[6] = (byte)(ch4_duty_cycle & 0b0000000011111111);
-  //    outGoingPacket[7] = (byte)(ch4_duty_cycle >> 8);
-  //    outGoingPacket[8] = (byte)(ch5_duty_cycle & 0b0000000011111111);
-  //    outGoingPacket[9] = (byte)(ch5_duty_cycle >> 8);
-  //    outGoingPacket[10] = (byte)(left_wheel_pulses & 0b0000000011111111);
-  //    outGoingPacket[11] = (byte)(left_wheel_pulses >> 8 & 0b0000000011111111);
-  //    outGoingPacket[12] = (byte)(left_wheel_pulses >> 16 & 0b0000000011111111);
-  //    outGoingPacket[13] = (byte)(left_wheel_pulses >> 24);
-  //    outGoingPacket[14] = (byte)(right_wheel_pulses & 0b0000000011111111);
-  //    outGoingPacket[15] = (byte)(right_wheel_pulses >> 8 & 0b0000000011111111);
-  //    outGoingPacket[16] = (byte)(right_wheel_pulses >> 16 & 0b0000000011111111);
-  //    outGoingPacket[17] = (byte)(right_wheel_pulses >> 24);
-  //
-  //    FLOATUNION_t latitude;
-  //    latitude.number = GPS.latitudeDegrees;
-  //    FLOATUNION_t longitude;
-  //    longitude.number = GPS.longitudeDegrees;
-  //    FLOATUNION_t hdop; //horizontal dilution of precision for variance calculation and debugging
-  //    hdop.number = GPS.HDOP;
-  //
-  //    outGoingPacket[18] = (byte)(latitude.bytes[0]);
-  //    outGoingPacket[19] = (byte)(latitude.bytes[1]);
-  //    outGoingPacket[20] = (byte)(latitude.bytes[2]);
-  //    outGoingPacket[21] = (byte)(latitude.bytes[3]);
-  //
-  //    outGoingPacket[22] = (byte)(longitude.bytes[0]);
-  //    outGoingPacket[23] = (byte)(longitude.bytes[1]);
-  //    outGoingPacket[24] = (byte)(longitude.bytes[2]);
-  //    outGoingPacket[25] = (byte)(longitude.bytes[3]);
-  //
-  //    outGoingPacket[26] = (byte)(hdop.bytes[0]);
-  //    outGoingPacket[27] = (byte)(hdop.bytes[1]);
-  //    outGoingPacket[28] = (byte)(hdop.bytes[2]);
-  //    outGoingPacket[29] = (byte)(hdop.bytes[3]);
-  //
-  //    //multiply speed by 100 to retain two decimal precision when moved to jetson
-  //    outGoingPacket[30] = (byte)((int)(GPS.speed * 100) & 0b0000000011111111);
-  //    outGoingPacket[31] = (byte)((int)(GPS.speed * 100) >> 8);
-  //    outGoingPacket[32] = (byte)((int)(GPS.angle * 100) & 0b0000000011111111);
-  //    outGoingPacket[33] = (byte)((int)(GPS.angle * 100) >> 8);
-  //    outGoingPacket[34] = (byte)((int)(GPS.altitude * 100) & 0b0000000011111111);
-  //    outGoingPacket[35] = (byte)((int)(GPS.altitude * 100) >> 8);
-  //
-  //    outGoingPacket[36] = (byte)(GPS.fix);
-  //    outGoingPacket[37] = (byte)(GPS.fixquality);
-  //    outGoingPacket[38] = (byte)(GPS.satellites);
-  //
-  //    byte PEC = outGoingPacket[0];
-  //    for (int i = 1; i < outGoingPacketLength - 1; i++) {
-  //      PEC ^= outGoingPacket[i];
-  //    }
-  //    outGoingPacket[outGoingPacketLength - 1] = PEC;
-  //
-  //    //Serial.write(outGoingPacket, outGoingPacketLength);
-  //  }
-  //
-  //  if (Serial.available() > 0) {
-  //    serialEvent();
-  //  } else {
-  //    digitalWrite(LED_BUILTIN, LOW);
-  //  }
+  char c = GPS.read();
+  if (GPS.newNMEAreceived()) {
+    GPS.parse(GPS.lastNMEA());
+  }
+
+  //Send packet to computer
+  if (micros() - lastSend > sendPeriod) {
+    byte outGoingPacket[outGoingPacketLength];
+    outGoingPacket[0] = (byte)(ch0_duty_cycle & 0b0000000011111111);
+    outGoingPacket[1] = (byte)(ch0_duty_cycle >> 8);
+    outGoingPacket[0] = (byte)(ch1_duty_cycle & 0b0000000011111111);
+    outGoingPacket[1] = (byte)(ch1_duty_cycle >> 8);
+    outGoingPacket[2] = (byte)(ch2_duty_cycle & 0b0000000011111111);
+    outGoingPacket[3] = (byte)(ch2_duty_cycle >> 8);
+    outGoingPacket[4] = (byte)(ch3_duty_cycle & 0b0000000011111111);
+    outGoingPacket[5] = (byte)(ch3_duty_cycle >> 8);
+    outGoingPacket[6] = (byte)(ch4_duty_cycle & 0b0000000011111111);
+    outGoingPacket[7] = (byte)(ch4_duty_cycle >> 8);
+    outGoingPacket[8] = (byte)(ch5_duty_cycle & 0b0000000011111111);
+    outGoingPacket[9] = (byte)(ch5_duty_cycle >> 8);
+    outGoingPacket[10] = (byte)(ch6_duty_cycle & 0b0000000011111111);
+    outGoingPacket[11] = (byte)(ch6_duty_cycle >> 8);
+    outGoingPacket[12] = (byte)(ch7_duty_cycle & 0b0000000011111111);
+    outGoingPacket[13] = (byte)(ch7_duty_cycle >> 8);
+    outGoingPacket[14] = (byte)(ch8_duty_cycle & 0b0000000011111111);
+    outGoingPacket[15] = (byte)(ch8_duty_cycle >> 8);
+    outGoingPacket[16] = (byte)(ch9_duty_cycle & 0b0000000011111111);
+    outGoingPacket[17] = (byte)(ch9_duty_cycle >> 8);
+    outGoingPacket[18] = (byte)(ch10_duty_cycle & 0b0000000011111111);
+    outGoingPacket[19] = (byte)(ch10_duty_cycle >> 8);
+    outGoingPacket[20] = (byte)(ch11_duty_cycle & 0b0000000011111111);
+    outGoingPacket[21] = (byte)(ch11_duty_cycle >> 8);
+    outGoingPacket[24] = (byte)(left_wheel_pulses & 0b0000000011111111);
+    outGoingPacket[25] = (byte)(left_wheel_pulses >> 8 & 0b0000000011111111);
+    outGoingPacket[26] = (byte)(left_wheel_pulses >> 16 & 0b0000000011111111);
+    outGoingPacket[27] = (byte)(left_wheel_pulses >> 24);
+    outGoingPacket[28] = (byte)(right_wheel_pulses & 0b0000000011111111);
+    outGoingPacket[29] = (byte)(right_wheel_pulses >> 8 & 0b0000000011111111);
+    outGoingPacket[30] = (byte)(right_wheel_pulses >> 16 & 0b0000000011111111);
+    outGoingPacket[31] = (byte)(right_wheel_pulses >> 24);
+
+    FLOATUNION_t latitude;
+    latitude.number = 10.5;
+    FLOATUNION_t longitude;
+    longitude.number = 14.2;
+    FLOATUNION_t hdop; //horizontal dilution of precision for variance calculation and debugging
+    hdop.number = 1.7;
+
+    outGoingPacket[32] = (byte)(latitude.bytes[0]);
+    outGoingPacket[33] = (byte)(latitude.bytes[1]);
+    outGoingPacket[34] = (byte)(latitude.bytes[2]);
+    outGoingPacket[35] = (byte)(latitude.bytes[3]);
+
+    outGoingPacket[36] = (byte)(longitude.bytes[0]);
+    outGoingPacket[37] = (byte)(longitude.bytes[1]);
+    outGoingPacket[38] = (byte)(longitude.bytes[2]);
+    outGoingPacket[39] = (byte)(longitude.bytes[3]);
+
+    outGoingPacket[40] = (byte)(hdop.bytes[0]);
+    outGoingPacket[41] = (byte)(hdop.bytes[1]);
+    outGoingPacket[42] = (byte)(hdop.bytes[2]);
+    outGoingPacket[43] = (byte)(hdop.bytes[3]);
+
+    //multiply speed by 100 to retain two decimal precision when moved to jetson
+    outGoingPacket[44] = (byte)((int)(GPS.speed * 100) & 0b0000000011111111);
+    outGoingPacket[45] = (byte)((int)(GPS.speed * 100) >> 8);
+    outGoingPacket[46] = (byte)((int)(GPS.angle * 100) & 0b0000000011111111);
+    outGoingPacket[47] = (byte)((int)(GPS.angle * 100) >> 8);
+    outGoingPacket[48] = (byte)((int)(GPS.altitude * 100) & 0b0000000011111111);
+    outGoingPacket[49] = (byte)((int)(GPS.altitude * 100) >> 8);
+
+    outGoingPacket[50] = (byte)(GPS.fix);
+    outGoingPacket[51] = (byte)(GPS.fixquality);
+    outGoingPacket[52] = (byte)(GPS.satellites);
+    outGoingPacket[53] = (byte)(TSS_states);
+
+    byte PEC = outGoingPacket[0];
+    for (int i = 1; i < outGoingPacketLength - 1; i++) {
+      PEC ^= outGoingPacket[i];
+    }
+    outGoingPacket[outGoingPacketLength - 1] = PEC;
+    Serial.write(outGoingPacket, outGoingPacketLength);
+
+     lastSend = micros();
+    }
+
+  if (Serial.available() > 0) {
+    serialEvent();
+  } else {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
 }
 
 void serialEvent() {
