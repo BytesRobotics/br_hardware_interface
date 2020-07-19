@@ -68,7 +68,7 @@ extern "C" unsigned int PINCOUNT_fn();
 
 // LEDs
 // ----
-#define PIN_LED     (32u)
+#define PIN_LED     (40u)
 #define LED_BUILTIN PIN_LED
 
 // Analog pins
@@ -92,7 +92,7 @@ static const uint8_t A6  = PIN_A6;
 // SPI Interfaces
 // --------------
 #define SPI_INTERFACES_COUNT 2
- 
+
 // SPI
 #define PIN_SPI_MISO  (10u)
 #define PIN_SPI_MOSI  (8u)
@@ -205,4 +205,3 @@ unsigned int PINCOUNT_fn();
 
 // Alias Serial to SerialUSB
 #define Serial                      SerialUSB
-
