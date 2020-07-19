@@ -74,10 +74,10 @@ void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time)
         RCLCPP_DEBUG(this->get_logger(), "Could not read hardware controller from /dev/ttyACM0");
     }
 
-    double left_encoder_position = static_cast<double>(connection.get_left_encoder() - initial_left_encoder_position_)/encoder_ticks_per_rot_;
-    double right_encoder_position = static_cast<double>(connection.get_right_encoder() - initial_right_encoder_position_)/encoder_ticks_per_rot_;
+    double left_encoder_position =   static_cast<double>(connection.get_left_encoder() - initial_left_encoder_position_)/encoder_ticks_per_rot_ * 2 * M_PI;
+    double right_encoder_position = -static_cast<double>(connection.get_right_encoder() - initial_right_encoder_position_)/encoder_ticks_per_rot_ * 2 * M_PI;
 
-    left_wheel_angular_velocity_ = (left_encoder_position - last_left_encoder_position_)/(elapsed_time.count()/1000000000.0);
+    left_wheel_angular_velocity_ =  (left_encoder_position - last_left_encoder_position_)/(elapsed_time.count()/1000000000.0);
     right_wheel_angular_velocity_ = (right_encoder_position - last_right_encoder_position_)/(elapsed_time.count()/1000000000.0);
 
     auto joint_states_msg = sensor_msgs::msg::JointState();
@@ -193,7 +193,7 @@ void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time
     /// Kinematics model
     if(velocity_x_ == 0){
         angular_velocity_right_setpoint = (velocity_theta_ * wheel_separation_/2)/(wheel_diameter_/2);
-        angular_velocity_left_setpoint = -angular_velocity_right_setpoint;
+        angular_velocity_left_setpoint  = -angular_velocity_right_setpoint;
     } else {
         angular_velocity_right_setpoint = (velocity_x_ + velocity_theta_/2)/(wheel_diameter_/2);
         angular_velocity_left_setpoint = (velocity_x_ - velocity_theta_/2)/(wheel_diameter_/2);
@@ -205,7 +205,7 @@ void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time
     last_right_motor_cmd_ = right_cmd;
     last_left_motor_cmd_ = left_cmd;
 
-    connection.set_controller(right_cmd, left_cmd,0);
+    connection.set_controller(right_cmd, -left_cmd,0);
 }
 
 void BRHardwareInterface::configure_parameters() {

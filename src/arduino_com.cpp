@@ -15,8 +15,8 @@ HardwareCom::HardwareCom(const std::string& port, int baud):
 }
 
 bool HardwareCom::set_controller(double rmotor_cmd, double lmotor_cmd, double head_cmd){
-//  std::cout << "rmotor_cmd: " << rmotor_cmd << "\n";
-//  std::cout << "lmotor_cmd: " << lmotor_cmd << "\n";
+   // std::cout << "rmotor_cmd: " << rmotor_cmd << "\n";
+   // std::cout << "lmotor_cmd: " << lmotor_cmd << "\n";
    auto lmotor = static_cast<int>(map<double>(lmotor_cmd, -1, 1, -1000, 1000));
    auto rmotor = static_cast<int>(map<double>(rmotor_cmd, -1, 1, -1000, 1000));
    auto head = static_cast<int>(map<double>(head_cmd, -1, 1, -1000, 1000));
@@ -36,10 +36,6 @@ bool HardwareCom::set_controller(double rmotor_cmd, double lmotor_cmd, double he
    //PEC by XORing all values
    outgoing_packet_[outgoing_packet_length_ - 1] = outgoing_packet_[0];
    for(int i=1; i < outgoing_packet_length_ - 1; i++){ outgoing_packet_[outgoing_packet_length_ - 1]^=outgoing_packet_[i];}
-
-//  std::cout << "packet down: " <<  std::bitset<8>(outgoing_packet_[4]) << std::bitset<8>(outgoing_packet_[3]) << \
-//  std::bitset<8>(outgoing_packet_[2]) << std::bitset<8>(outgoing_packet_[1]) << \
-//  std::bitset<8>(outgoing_packet_[0]) << "\n";
 
   size_t bytesSent = connection_.write(outgoing_packet_, outgoing_packet_length_); //Sending 6 bytes
   return int(bytesSent) == outgoing_packet_length_;
