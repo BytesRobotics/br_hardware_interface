@@ -199,8 +199,8 @@ void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time
     }
 
     /// Run PIDs
-    double right_cmd = std::max(std::min(last_right_motor_cmd_ + right_pid_.update(angular_velocity_right_setpoint - right_wheel_angular_velocity_, elapsed_time), -1.0), 1.0);
-    auto left_cmd = std::max(std::min(last_left_motor_cmd_ + left_pid_.update(angular_velocity_left_setpoint - left_wheel_angular_velocity_, elapsed_time), -1.0), 1.0);
+    auto right_cmd = std::min(std::max(last_right_motor_cmd_ + right_pid_.update(angular_velocity_right_setpoint - right_wheel_angular_velocity_, elapsed_time), -1.0), 1.0);
+    auto left_cmd = std::min(std::max(last_left_motor_cmd_ + left_pid_.update(angular_velocity_left_setpoint - left_wheel_angular_velocity_, elapsed_time), -1.0), 1.0);
     last_right_motor_cmd_ = right_cmd;
     last_left_motor_cmd_ = left_cmd;
 
