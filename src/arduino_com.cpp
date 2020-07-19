@@ -5,13 +5,13 @@ HardwareCom::HardwareCom(const std::string& port, int baud):
                     serial::eightbits, serial::parity_even, serial::stopbits_one)
 //Serial set to SER_8E1 (8 bit, even parity, 1 stop bit)
 {
-  //open serial port
-  if(connection_.isOpen()){
-    std::cout << "Port " << port << " opened successfully!\n";
-  } else {
-    std::cerr << "Port " << port << " failed to open successfully!\n";
-    exit(1);
-  }
+    //open serial port
+    if(connection_.isOpen()){
+        std::cout << "Port " << port << " opened successfully!\n";
+    } else {
+        std::cerr << "Port " << port << " failed to open successfully!\n";
+        exit(1);
+    }
 }
 
 bool HardwareCom::set_controller(double rmotor_cmd, double lmotor_cmd, double head_cmd){
@@ -37,10 +37,11 @@ bool HardwareCom::set_controller(double rmotor_cmd, double lmotor_cmd, double he
    outgoing_packet_[outgoing_packet_length_ - 1] = outgoing_packet_[0];
    for(int i=1; i < outgoing_packet_length_ - 1; i++){ outgoing_packet_[outgoing_packet_length_ - 1]^=outgoing_packet_[i];}
 
-//  std::cout << "packet down: " <<  std::bitset<8>(outgoing_packet_[4]) << std::bitset<8>(outgoing_packet_[3]) << std::bitset<8>(outgoing_packet_[2]) << std::bitset<8>(outgoing_packet_[1]) << std::bitset<8>(outgoing_packet_[0]) << "\n";
+//  std::cout << "packet down: " <<  std::bitset<8>(outgoing_packet_[4]) << std::bitset<8>(outgoing_packet_[3]) << \
+//  std::bitset<8>(outgoing_packet_[2]) << std::bitset<8>(outgoing_packet_[1]) << \
+//  std::bitset<8>(outgoing_packet_[0]) << "\n";
 
   size_t bytesSent = connection_.write(outgoing_packet_, outgoing_packet_length_); //Sending 6 bytes
-
   return int(bytesSent) == outgoing_packet_length_;
 }
 

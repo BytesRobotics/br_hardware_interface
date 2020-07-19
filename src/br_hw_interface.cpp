@@ -50,6 +50,7 @@ connection(port, 115200)
     initial_right_encoder_position_ = connection.get_right_encoder();
 
     /// Start reading from and updating the hardware controller
+    // NOTE : Arduino loop must run at least 2x the frequency of listed here otherwise it will cap the speed!
     float frequency = this->declare_parameter("frequency", 50);
     int delay = static_cast<int>(1.0/frequency*1000);
     timer_ = this->create_wall_timer(std::chrono::milliseconds(delay), std::bind(&BRHardwareInterface::update, this));
@@ -76,8 +77,8 @@ void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time)
     double left_encoder_position = static_cast<double>(connection.get_left_encoder() - initial_left_encoder_position_)/encoder_ticks_per_rot_;
     double right_encoder_position = static_cast<double>(connection.get_right_encoder() - initial_right_encoder_position_)/encoder_ticks_per_rot_;
 
-    left_wheel_angular_velocity_ = (left_encoder_position - last_left_encoder_position_)/elapsed_time.count();
-    right_wheel_angular_velocity_ = (right_encoder_position - last_right_encoder_position_)/elapsed_time.count();
+    left_wheel_angular_velocity_ = (left_encoder_position - last_left_encoder_position_)/(elapsed_time.count()/1000000000.0);
+    right_wheel_angular_velocity_ = (right_encoder_position - last_right_encoder_position_)/(elapsed_time.count()/1000000000.0);
 
     auto joint_states_msg = sensor_msgs::msg::JointState();
     joint_states_msg.header.stamp = time_stamp;

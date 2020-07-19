@@ -12,9 +12,9 @@ double PID::update(double error, std::chrono::steady_clock::duration dt) {
             integral_ = 0;
         }
     }
-    integral_ = std::min(std::max(integral_ + error*dt.count(), min_i_), max_i_);
+    integral_ = std::min(std::max(integral_ + error*(dt.count()/1000000000.0), min_i_), max_i_);
     auto i_term = i_*integral_;
-    auto d_term = d_*(error-last_error_)/dt.count();
+    auto d_term = d_*(error-last_error_)/(dt.count()/1000000000.0);
     last_error_ = error;
     return p_term + i_term + d_term;
 }
