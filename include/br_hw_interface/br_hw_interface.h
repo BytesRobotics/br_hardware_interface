@@ -71,6 +71,7 @@ class BRHardwareInterface : public rclcpp::Node{
     double left_wheel_angular_velocity_{}, right_wheel_angular_velocity_{};
     double velocity_x_{}, velocity_theta_{}; //! Set points from cmd_vel
     double last_left_motor_cmd_{}, last_right_motor_cmd_{};
+    double control_deadzone_;
 
     float last_longitude_, last_latitude_, last_altitude_;
 

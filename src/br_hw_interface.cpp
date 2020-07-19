@@ -205,6 +205,14 @@ void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time
     last_right_motor_cmd_ = right_cmd;
     last_left_motor_cmd_ = left_cmd;
 
+    /// Control Deadzones
+    if(std::abs(left_cmd) < control_deadzone_){
+        left_cmd = 0;
+    }
+    if(std::abs(right_cmd) < control_deadzone_){
+        right_cmd = 0;
+    }
+
     connection.set_controller(right_cmd, -left_cmd,0);
 }
 
@@ -215,6 +223,7 @@ void BRHardwareInterface::configure_parameters() {
     wheel_separation_ = this->declare_parameter("wheel_separation", 0.4118);
     left_wheel_joint_name_ = this->declare_parameter("left_wheel_joint_name", "left_wheel_joint");
     right_wheel_joint_name_ = this->declare_parameter("right_wheel_joint_name", "right_wheel_joint");
+    control_deadzone_ = this->declare_parameter("control_deadzone", 0.015);
 
     double p = this->declare_parameter("pid_p", 0.1);
     left_pid_.set_p(p);
@@ -255,6 +264,8 @@ void BRHardwareInterface::configure_parameters() {
                 left_wheel_joint_name_ = changed_parameter.value.string_value;
             } else if(changed_parameter.name == "right_wheel_joint_name"){
                 right_wheel_joint_name_ = changed_parameter.value.string_value;
+            } else if(changed_parameter.name == "control_deadzone"){
+                control_deadzone_ = changed_parameter.value.double_value;
             } else if(changed_parameter.name == "pid_p"){
                 left_pid_.set_p(changed_parameter.value.double_value);
                 right_pid_.set_p(changed_parameter.value.double_value);
