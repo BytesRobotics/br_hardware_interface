@@ -74,12 +74,6 @@ class HardwareCom
   bool channels_last_update_skipped_[12] = {}; //!Did we skip the last value because of a max_diff_ problem
   const int max_diff_{3000}; //!The maximum difference between values for it to be accepted. Above this we assume the value is bad
 
-  //  front_dist_pin  CH1
-  //  left_dist_pin   CH2
-  //  right_dist_pin  CH3
-  //  rear_dist_pin   CH4
-  //  bottom_dist_pin CH5
-
   long encoder_left_{}, encoder_right_{};
   FLOATUNION_t latitude_{}, longitude_{}, hdop_{};
   float speed_{}, angle_{}, altitude_{}; //!ground speed_, angle_ from north, and altitude_ from sea level

@@ -30,15 +30,19 @@ connection(port, 115200)
     rear_right_bottom_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>("distance/rear_right_bottom", rclcpp::SensorDataQoS());
 
     nav_sat_pub_ = this->create_publisher<sensor_msgs::msg::NavSatFix>("gps", rclcpp::SystemDefaultsQoS().transient_local());
+    num_satellites_pub_ = this->create_publisher<std_msgs::msg::Int32>("gps/satellites", rclcpp::SystemDefaultsQoS().transient_local());
+    gps_angle_pub_ = this->create_publisher<std_msgs::msg::Float64>("gps/angle", rclcpp::SystemDefaultsQoS().transient_local());
+    gps_speed_pub_ = this->create_publisher<std_msgs::msg::Float64>("gps/speed", rclcpp::SystemDefaultsQoS().transient_local());
 
     /// Subscriptions
     cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10,
             std::bind(&BRHardwareInterface::cmd_vel_cb, this, std::placeholders::_1));
 
     connection.set_controller(0, 0, 0);
-    usleep(30000);
+    usleep(40000);
     while(!connection.read_controller()){
         RCLCPP_ERROR(this->get_logger(), "Could not read hardware controller from /dev/ttyACM0");
+        usleep(20000);
     }
     last_left_encoder_position_ = static_cast<double>(connection.get_left_encoder())/encoder_ticks_per_rot_;
     last_right_encoder_position_ = static_cast<double>(connection.get_right_encoder())/encoder_ticks_per_rot_;
@@ -161,6 +165,15 @@ void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time)
         nav_sat_msg.position_covariance[6] = 50.0;
         nav_sat_msg.position_covariance_type = 2;
         nav_sat_pub_->publish(nav_sat_msg);
+
+        std_msgs::msg::Int32 num_satellites;
+        num_satellites.data = connection.get_num_satellites();
+        num_satellites_pub_->publish(num_satellites);
+        std_msgs::msg::Float64 speed, angle;
+        speed.data = connection.get_speed();
+        gps_speed_pub_->publish(speed);
+        angle.data = connection.get_angle();
+        gps_angle_pub_->publish(angle);
 
         last_longitude_ = connection.get_longitude();
         last_latitude_ = connection.get_latitude();

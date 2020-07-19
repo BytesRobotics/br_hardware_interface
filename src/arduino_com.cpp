@@ -41,8 +41,7 @@ bool HardwareCom::set_controller(double rmotor_cmd, double lmotor_cmd, double he
 
   size_t bytesSent = connection_.write(outgoing_packet_, outgoing_packet_length_); //Sending 6 bytes
 
-    return int(bytesSent) == outgoing_packet_length_;
-//  std::cout << "packet sent\n";
+  return int(bytesSent) == outgoing_packet_length_;
 }
 
 bool HardwareCom::read_controller(){
@@ -61,7 +60,7 @@ bool HardwareCom::read_controller(){
 //        std::cout << "\n";
 
         uint8_t pec = incoming_packet_[0];
-        for(int i=1; i < incoming_packet_length_; i++){ pec^=incoming_packet_[i];}
+        for(int i=1; i < incoming_packet_length_-1; i++){ pec^=incoming_packet_[i];}
         if(pec == static_cast<uint8_t>(incoming_packet_[incoming_packet_length_ - 1])){
 //            std::cout << "PEC Correct\n";
             /// Fill in channel array with distance sensor values
@@ -97,8 +96,7 @@ bool HardwareCom::read_controller(){
             tss_byte_ = incoming_packet_[o+29];
 
             return true;
-        } //check PEC byte
-        return false;
+        }
     }
     return false;
 }
