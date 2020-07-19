@@ -1,3 +1,0 @@
-<launch>
-    <node pkg="br-hardware-interface" type="br_hardware_interface_node" name="hardware_interface" output="screen" respawn="true"/>
-</launch>

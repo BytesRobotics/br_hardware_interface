@@ -51,3 +51,5 @@ qtcreator-*
 CATKIN_IGNORE
 
 .DS_Store
+/cmake-build-debug/
+.idea
