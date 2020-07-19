@@ -17,6 +17,8 @@ class PID{
     double last_error_{0};
     double integral_{0};
 
+    double last_cmd_{0};
+
 public:
     double update(double error, std::chrono::steady_clock::duration dt);
 

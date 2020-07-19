@@ -16,7 +16,10 @@ double PID::update(double error, std::chrono::steady_clock::duration dt) {
     auto i_term = i_*integral_;
     auto d_term = d_*(error-last_error_)/(dt.count()/1000000000.0);
     last_error_ = error;
-    return p_term + i_term + d_term;
+
+    auto output = std::min(std::max(last_cmd_ + (p_term + i_term + d_term), -1.0), 1.0);
+    last_cmd_ = output;
+    return output;
 }
 
 void PID::set_p(double p) {
