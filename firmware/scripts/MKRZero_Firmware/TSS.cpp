@@ -1,5 +1,34 @@
 #include "Arduino.h"
 #include "TSS.h"
+
+void TTS_graph_it(TSS& tube) {
+  if (tube.right_newval()) //if there's a new sensor value...
+  {
+    Serial.println(tube.filter_rightval());  //print the filtered value to remove some noise
+    Serial.print("  "); //spaces for the Serial plotter
+    Serial.print(tube.right_getaverage()); //print running average
+    Serial.print("  ");
+    Serial.print(tube.rightimpactThreshold()); //print trigger value
+    Serial.print("  ");
+    Serial.print(tube.rightreleaseThreshold()); //print trigger value
+    Serial.print("  ");
+  }
+
+  if (tube.left_newval())
+  {
+    Serial.print(tube.filter_leftval());
+    Serial.print("  ");
+    Serial.print(tube.left_getaverage());
+    Serial.print("  ");
+    Serial.print(tube.leftimpactThreshold());
+    Serial.print("  ");
+    Serial.print(tube.leftreleaseThreshold());
+    Serial.print("  ");
+
+  }
+  return;
+}
+
 //class SmartArray is put int the .cpp because it only needs to be accessed internally by the library
 //and not by the end user
 class SmartArray { //array class used to produce running average to compare current sensor reading to. At size 2,000, it is averaging over ~1 second
