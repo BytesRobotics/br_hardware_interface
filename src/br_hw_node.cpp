@@ -11,6 +11,7 @@ int main(int argc, char * argv[])
         port = argv[1];
     }
     rclcpp::init(argc, argv);
+    std::cout << "Using port: " <<  port << std::endl;
     rclcpp::spin(std::make_shared<BRHardwareInterface>(port));
     rclcpp::shutdown();
     return 0;

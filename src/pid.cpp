@@ -40,5 +40,5 @@ void PID::set_i_clamp_min(double min_i) {
 }
 
 void PID::set_anti_windup(bool use_anti_windup) {
-    use_anti_windup_ = use_anti_windup_;
+    use_anti_windup_ = use_anti_windup;
 }

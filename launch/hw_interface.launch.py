@@ -9,14 +9,22 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    # Create the launch configuration variables
-    use_sim_time = LaunchConfiguration('use_sim_time', default='False')
+    # export models path
+    if os.getenv('HARDWARE_INTERFACE_PORT') is not None:
+        port = os.getenv('HARDWARE_INTERFACE_PORT')
+    else:
+        port = "/dev/ttyACM0"
+
+    hw_interface_dir = get_package_share_directory('br_hardware_interface')
+    params = os.path.join(hw_interface_dir, "params", "hw_interface_params.yaml")
 
     hardware_interface_cmd = Node(
         package='br_hardware_interface',
         executable='br_hw_node',
         name='hardware_interface',
-        parameters=[{'use_sim_time': use_sim_time}]
+        output="screen",
+        arguments=[port],
+        parameters=[params]
     )
 
     ld = LaunchDescription()

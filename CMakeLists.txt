@@ -48,7 +48,7 @@ install(TARGETS br_hw_node
         EXPORT export_${PROJECT_NAME}
         DESTINATION lib/${PROJECT_NAME})
 
-install(DIRECTORY launch
+install(DIRECTORY launch params
         DESTINATION share/${PROJECT_NAME}/
         )
 

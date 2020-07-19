@@ -1,0 +1,16 @@
+hardware_interface:
+  ros__parameters:
+    use_sim_time: False
+    encoder_ticks_per_rot: 196
+    speed_of_sound: 374.0
+    wheel_diameter: 0.2032
+    wheel_separation: 0.4118
+    left_wheel_joint_name: "left_wheel_joint"
+    right_wheel_joint_name: "right_wheel_joint"
+    control_deadzone: 0.015
+    pid_p: 0.02
+    pid_i: 0.01
+    pid_d: 0.0005
+    pid_i_max: 5.0
+    pid_i_min: -5.0
+    pid_use_anti_windup: True
