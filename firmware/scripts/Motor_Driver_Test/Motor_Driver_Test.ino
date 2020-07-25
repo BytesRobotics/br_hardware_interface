@@ -1,7 +1,7 @@
 //Motor driver test for Byte 01
 //Written for 2x Cytron MD20A brushed motor drivers
 int dirpin1 = 5; //pin for direction of motor 1
-int speedpin1 = 10; //pin for speed of motor 2
+int speedpin1 = 6; //pin for speed of motor 2
 int dirpin2 = 0; //pin for direction of motor 2
 int speed2 = 0; //pin for speed of motor 2
 

@@ -33,8 +33,6 @@ void config_pwm(){
   while (GCLK->STATUS.bit.SYNCBUSY);              // Wait for synchronization
 
   // Enable the port multiplexer for the digital pin D7
-  SerialUSB.println(g_APinDescription[7].ulPort); // shoudl be 0
-  SerialUSB.println(g_APinDescription[7].ulPin); //should be 21
   PORT->Group[0].PINCFG[21].bit.PMUXEN = 1;
  
   // Connect the TCC0 timer to digital output D7 - port pins are paired odd PMUO and even PMUXE

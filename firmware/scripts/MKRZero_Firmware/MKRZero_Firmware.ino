@@ -134,7 +134,7 @@ void config_pwm();
 //Function for converting input (-1000 to 1000) to microseconds (1000 to 2000)
 inline int calculateHardwareValues(int input) {
   input = constrain(input, -1000, 1000);
-  return map(input, -1000, 1000, -255, 255); //0-255 speend and +/- for direction
+  return map(input, -1000, 1000, -4095, 4095); //0-4095 speend and +/- for direction
 }
 
 // Go from 16 bit to 32 bit two's complement
@@ -149,6 +149,7 @@ inline int twosComp(int input) {
 void setup() {
 
   Serial.begin(115200);
+  analogWriteResolution(12);
 
   // Initialize TSS sensors
   //  tube.wire1.begin(); //begin I2C communication for TSS
