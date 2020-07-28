@@ -34,12 +34,12 @@ void ch2_falling_interrupt() {
 //ch3
 void ch3_rising_interrupt() {
   ch_3_rising = micros();
-  attachInterrupt(1, 3, 11, ch3_falling_interrupt, FALLING);
+  attachInterrupt(1, 11, 11, ch3_falling_interrupt, FALLING);
 }
 
 void ch3_falling_interrupt() {
   ch3_duty_cycle = micros() - ch_3_rising;
-  attachInterrupt(1, 3, 11, ch3_rising_interrupt, RISING);
+  attachInterrupt(1, 11, 11, ch3_rising_interrupt, RISING);
 }
 
 //ch4
@@ -85,51 +85,6 @@ void ch7_falling_interrupt() {
   ch7_duty_cycle = micros() - ch_7_rising;
   attachInterrupt(1, 2, 2, ch7_rising_interrupt, RISING);
 }
-
-//ch8
-void ch8_rising_interrupt() {
-  ch_8_rising = micros();
-  attachInterrupt(1, 3, 3, ch8_falling_interrupt, FALLING);
-}
-
-void ch8_falling_interrupt() {
-  ch8_duty_cycle = micros() - ch_8_rising;
-  attachInterrupt(1, 3, 3, ch8_rising_interrupt, RISING);
-}
-
-//ch9
-void ch9_rising_interrupt() {
-  ch_9_rising = micros();
-  attachInterrupt(0, 17, 1, ch9_falling_interrupt, FALLING);
-}
-
-void ch9_falling_interrupt() {
-  ch9_duty_cycle = micros() - ch_9_rising;
-  attachInterrupt(0, 17, 1, ch9_rising_interrupt, RISING);
-}
-
-void ch10_rising_interrupt() {
-  ch_10_rising = micros();
-  attachInterrupt(1, 9, 10, ch10_falling_interrupt, FALLING);
-}
-
-
-void ch10_falling_interrupt() {
-  ch10_duty_cycle = micros() - ch_10_rising;
-  attachInterrupt(1, 9, 10, ch10_rising_interrupt, RISING);
-}
-
-void ch11_rising_interrupt() {
-  ch_11_rising = micros();
-  attachInterrupt(1, 13, 13, ch11_falling_interrupt, FALLING);
-}
-
-
-void ch11_falling_interrupt() {
-  ch11_duty_cycle = micros() - ch_11_rising;
-  attachInterrupt(1, 13, 13, ch11_rising_interrupt, RISING);
-}
-
 
 // Interrupts for motor encoders
 void right_wheel_encoder_interrupt() {

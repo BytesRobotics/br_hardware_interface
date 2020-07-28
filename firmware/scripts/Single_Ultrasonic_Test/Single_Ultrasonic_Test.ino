@@ -16,20 +16,20 @@ void attachInterrupt(uint32_t port, uint32_t pin, uint32_t extint, voidFuncPtr c
 volatile long ch_0_rising, ch0_duty_cycle;
 void ch0_rising_interrupt();
 void ch0_falling_interrupt();
+int lastreading = 0;
 
 void setup() {
   SerialUSB.begin(115200);
   while (!SerialUSB);
-  SerialUSB.println("Hello there, my name is Bytes :)");
-  attachInterrupt(1, 7, 7, ch0_rising_interrupt, RISING);
+  //SerialUSB.println("Hello there, my name is Bytes :)");
+  attachInterrupt(1, 10, 10, ch0_rising_interrupt, RISING);
   SerialUSB.println("interrupt attached");
   config_pwm();
   SerialUSB.println("Setup complete");
 }
 
 void loop() {
-  SerialUSB.print("CH0: ");
-  SerialUSB.println(ch0_duty_cycle);
+    SerialUSB.println(ch0_duty_cycle);
 }
 
 //ch0
