@@ -23,7 +23,8 @@ typedef union
 void attachInterrupt(uint32_t port, uint32_t pin, uint32_t extint, voidFuncPtr callback, uint32_t mode);
 
 // TSS Config
-TSS tube; //create an instance of the TSS library for each section of our tube
+TSS front; //create an instance of the TSS library for each section of our tube
+TSS rear;
 unsigned long lastloop = 0;
 int TSS_states = 0;
 
@@ -109,6 +110,13 @@ volatile unsigned long ch_7_rising, ch7_duty_cycle;
 void ch7_rising_interrupt();
 void ch7_falling_interrupt();
 
+//Setting other values to zero for now
+int ch8_duty_cycle = 0;
+int ch9_duty_cycle = 0;
+int ch10_duty_cycle = 0;
+int ch11_duty_cycle = 0;
+
+
 void left_wheel_encoder_interrupt();
 void right_wheel_encoder_interrupt();
 
@@ -131,21 +139,31 @@ inline int twosComp(int input) {
 }
 
 void setup() {
-
   Serial.begin(115200);
   analogWriteResolution(12);
 
-  // Initialize TSS sensors
-  //  tube.wire1.begin(); //begin I2C communication for TSS
-  //  tube.wire1.setClock(400000);
-  //  tube.init_sensor(0x77);
-  //  tube.init_sensor(0x76);
-  //
-  //  tube.send_cmd(0x76, MS5xxx_CMD_RESET);//reset sensors
-  //  tube.send_cmd(0x77, MS5xxx_CMD_RESET);
-  //
-  //  tube.setImpactThreshold(3000);//sets how much the pressure has to increase before an impact event is triggered
-  //  tube.setReleaseThreshold(2500);//sets how much the pressure has to decrease before a release event is triggered
+  //Initialize TSS sensors - 4 sections: front left, front right, rear left, rear right
+//  front.wire2.begin(); //begin I2C communication for TSS
+//  front.wire2.setClock(100000);
+//  front.init_sensor(0x77);
+//  front.init_sensor(0x76);
+//
+//  front.send_cmd(0x76, MS5xxx_CMD_RESET);//reset sensors
+//  front.send_cmd(0x77, MS5xxx_CMD_RESET);
+//
+//  front.setImpactThreshold(3000);//sets how much the pressure has to increase before an impact event is triggered
+//  front.setReleaseThreshold(3000);//sets how much the pressure has to decrease before a release event is triggered
+
+  rear.wire1.begin(); //begin I2C communication for TSS
+  rear.wire1.setClock(100000);
+  rear.init_sensor(0x77);
+  rear.init_sensor(0x76);
+
+  rear.send_cmd(0x76, MS5xxx_CMD_RESET);//reset sensors
+  rear.send_cmd(0x77, MS5xxx_CMD_RESET);
+
+  rear.setImpactThreshold(3000);//sets how much the pressure has to increase before an impact event is triggered
+  rear.setReleaseThreshold(3000);//sets how much the pressure has to decrease before a release event is triggered
 
   // Configure left and right wheel PWM, dir, and encoder
   pinMode(right_wheel_encoder_b_pin, INPUT_PULLUP);
@@ -203,7 +221,16 @@ void setup() {
 }
 
 void loop() {
-   
+
+  if (rear.r_impact() || rear.l_impact()) {
+    Serial.println("Ur gay");
+  }
+
+  if (rear.r_release() || rear.l_release()) {
+    Serial.println("Ur no longer gay");
+  }
+
+
   now = micros(); //get current time to  ensure connection to main controller
 
   if (wdt_isTripped || now - lastPacket > 500000) { //If the contorller hasn't recived a new packet in half a second (short circuit limits calcs)
@@ -241,86 +268,86 @@ void loop() {
     GPS.parse(GPS.lastNMEA());
   }
 
-  Send packet to computer
-  if (micros() - lastSend > sendPeriod) {
-    byte outGoingPacket[outGoingPacketLength];
-    outGoingPacket[0] = (byte)(ch0_duty_cycle & 0b0000000011111111);
-    outGoingPacket[1] = (byte)(ch0_duty_cycle >> 8);
-    outGoingPacket[0] = (byte)(ch1_duty_cycle & 0b0000000011111111);
-    outGoingPacket[1] = (byte)(ch1_duty_cycle >> 8);
-    outGoingPacket[2] = (byte)(ch2_duty_cycle & 0b0000000011111111);
-    outGoingPacket[3] = (byte)(ch2_duty_cycle >> 8);
-    outGoingPacket[4] = (byte)(ch3_duty_cycle & 0b0000000011111111);
-    outGoingPacket[5] = (byte)(ch3_duty_cycle >> 8);
-    outGoingPacket[6] = (byte)(ch4_duty_cycle & 0b0000000011111111);
-    outGoingPacket[7] = (byte)(ch4_duty_cycle >> 8);
-    outGoingPacket[8] = (byte)(ch5_duty_cycle & 0b0000000011111111);
-    outGoingPacket[9] = (byte)(ch5_duty_cycle >> 8);
-    outGoingPacket[10] = (byte)(ch6_duty_cycle & 0b0000000011111111);
-    outGoingPacket[11] = (byte)(ch6_duty_cycle >> 8);
-    outGoingPacket[12] = (byte)(ch7_duty_cycle & 0b0000000011111111);
-    outGoingPacket[13] = (byte)(ch7_duty_cycle >> 8);
-    outGoingPacket[14] = (byte)(ch8_duty_cycle & 0b0000000011111111);
-    outGoingPacket[15] = (byte)(ch8_duty_cycle >> 8);
-    outGoingPacket[16] = (byte)(ch9_duty_cycle & 0b0000000011111111);
-    outGoingPacket[17] = (byte)(ch9_duty_cycle >> 8);
-    outGoingPacket[18] = (byte)(ch10_duty_cycle & 0b0000000011111111);
-    outGoingPacket[19] = (byte)(ch10_duty_cycle >> 8);
-    outGoingPacket[20] = (byte)(ch11_duty_cycle & 0b0000000011111111);
-    outGoingPacket[21] = (byte)(ch11_duty_cycle >> 8);
-    outGoingPacket[24] = (byte)(left_wheel_pulses & 0b0000000011111111);
-    outGoingPacket[25] = (byte)(left_wheel_pulses >> 8 & 0b0000000011111111);
-    outGoingPacket[26] = (byte)(left_wheel_pulses >> 16 & 0b0000000011111111);
-    outGoingPacket[27] = (byte)(left_wheel_pulses >> 24);
-    outGoingPacket[28] = (byte)(right_wheel_pulses & 0b0000000011111111);
-    outGoingPacket[29] = (byte)(right_wheel_pulses >> 8 & 0b0000000011111111);
-    outGoingPacket[30] = (byte)(right_wheel_pulses >> 16 & 0b0000000011111111);
-    outGoingPacket[31] = (byte)(right_wheel_pulses >> 24);
-
-    FLOATUNION_t latitude;
-    latitude.number = 10.5;
-    FLOATUNION_t longitude;
-    longitude.number = 14.2;
-    FLOATUNION_t hdop; //horizontal dilution of precision for variance calculation and debugging
-    hdop.number = 1.7;
-
-    outGoingPacket[32] = (byte)(latitude.bytes[0]);
-    outGoingPacket[33] = (byte)(latitude.bytes[1]);
-    outGoingPacket[34] = (byte)(latitude.bytes[2]);
-    outGoingPacket[35] = (byte)(latitude.bytes[3]);
-
-    outGoingPacket[36] = (byte)(longitude.bytes[0]);
-    outGoingPacket[37] = (byte)(longitude.bytes[1]);
-    outGoingPacket[38] = (byte)(longitude.bytes[2]);
-    outGoingPacket[39] = (byte)(longitude.bytes[3]);
-
-    outGoingPacket[40] = (byte)(hdop.bytes[0]);
-    outGoingPacket[41] = (byte)(hdop.bytes[1]);
-    outGoingPacket[42] = (byte)(hdop.bytes[2]);
-    outGoingPacket[43] = (byte)(hdop.bytes[3]);
-
-    //multiply speed by 100 to retain two decimal precision when moved to jetson
-    outGoingPacket[44] = (byte)((int)(GPS.speed * 100) & 0b0000000011111111);
-    outGoingPacket[45] = (byte)((int)(GPS.speed * 100) >> 8);
-    outGoingPacket[46] = (byte)((int)(GPS.angle * 100) & 0b0000000011111111);
-    outGoingPacket[47] = (byte)((int)(GPS.angle * 100) >> 8);
-    outGoingPacket[48] = (byte)((int)(GPS.altitude * 100) & 0b0000000011111111);
-    outGoingPacket[49] = (byte)((int)(GPS.altitude * 100) >> 8);
-
-    outGoingPacket[50] = (byte)(GPS.fix);
-    outGoingPacket[51] = (byte)(GPS.fixquality);
-    outGoingPacket[52] = (byte)(GPS.satellites);
-    outGoingPacket[53] = (byte)(TSS_states);
-
-    byte PEC = outGoingPacket[0];
-    for (int i = 1; i < outGoingPacketLength - 1; i++) {
-      PEC ^= outGoingPacket[i];
-    }
-    outGoingPacket[outGoingPacketLength - 1] = PEC;
-    Serial.write(outGoingPacket, outGoingPacketLength);
-
-    lastSend = micros();
-  }
+  //Send packet to computer
+  //  if (micros() - lastSend > sendPeriod) {
+  //    byte outGoingPacket[outGoingPacketLength];
+  //    outGoingPacket[0] = (byte)(ch0_duty_cycle & 0b0000000011111111);
+  //    outGoingPacket[1] = (byte)(ch0_duty_cycle >> 8);
+  //    outGoingPacket[0] = (byte)(ch1_duty_cycle & 0b0000000011111111);
+  //    outGoingPacket[1] = (byte)(ch1_duty_cycle >> 8);
+  //    outGoingPacket[2] = (byte)(ch2_duty_cycle & 0b0000000011111111);
+  //    outGoingPacket[3] = (byte)(ch2_duty_cycle >> 8);
+  //    outGoingPacket[4] = (byte)(ch3_duty_cycle & 0b0000000011111111);
+  //    outGoingPacket[5] = (byte)(ch3_duty_cycle >> 8);
+  //    outGoingPacket[6] = (byte)(ch4_duty_cycle & 0b0000000011111111);
+  //    outGoingPacket[7] = (byte)(ch4_duty_cycle >> 8);
+  //    outGoingPacket[8] = (byte)(ch5_duty_cycle & 0b0000000011111111);
+  //    outGoingPacket[9] = (byte)(ch5_duty_cycle >> 8);
+  //    outGoingPacket[10] = (byte)(ch6_duty_cycle & 0b0000000011111111);
+  //    outGoingPacket[11] = (byte)(ch6_duty_cycle >> 8);
+  //    outGoingPacket[12] = (byte)(ch7_duty_cycle & 0b0000000011111111);
+  //    outGoingPacket[13] = (byte)(ch7_duty_cycle >> 8);
+  //    outGoingPacket[14] = (byte)(ch8_duty_cycle & 0b0000000011111111);
+  //    outGoingPacket[15] = (byte)(ch8_duty_cycle >> 8);
+  //    outGoingPacket[16] = (byte)(ch9_duty_cycle & 0b0000000011111111);
+  //    outGoingPacket[17] = (byte)(ch9_duty_cycle >> 8);
+  //    outGoingPacket[18] = (byte)(ch10_duty_cycle & 0b0000000011111111);
+  //    outGoingPacket[19] = (byte)(ch10_duty_cycle >> 8);
+  //    outGoingPacket[20] = (byte)(ch11_duty_cycle & 0b0000000011111111);
+  //    outGoingPacket[21] = (byte)(ch11_duty_cycle >> 8);
+  //    outGoingPacket[24] = (byte)(left_wheel_pulses & 0b0000000011111111);
+  //    outGoingPacket[25] = (byte)(left_wheel_pulses >> 8 & 0b0000000011111111);
+  //    outGoingPacket[26] = (byte)(left_wheel_pulses >> 16 & 0b0000000011111111);
+  //    outGoingPacket[27] = (byte)(left_wheel_pulses >> 24);
+  //    outGoingPacket[28] = (byte)(right_wheel_pulses & 0b0000000011111111);
+  //    outGoingPacket[29] = (byte)(right_wheel_pulses >> 8 & 0b0000000011111111);
+  //    outGoingPacket[30] = (byte)(right_wheel_pulses >> 16 & 0b0000000011111111);
+  //    outGoingPacket[31] = (byte)(right_wheel_pulses >> 24);
+  //
+  //    FLOATUNION_t latitude;
+  //    latitude.number = 10.5;
+  //    FLOATUNION_t longitude;
+  //    longitude.number = 14.2;
+  //    FLOATUNION_t hdop; //horizontal dilution of precision for variance calculation and debugging
+  //    hdop.number = 1.7;
+  //
+  //    outGoingPacket[32] = (byte)(latitude.bytes[0]);
+  //    outGoingPacket[33] = (byte)(latitude.bytes[1]);
+  //    outGoingPacket[34] = (byte)(latitude.bytes[2]);
+  //    outGoingPacket[35] = (byte)(latitude.bytes[3]);
+  //
+  //    outGoingPacket[36] = (byte)(longitude.bytes[0]);
+  //    outGoingPacket[37] = (byte)(longitude.bytes[1]);
+  //    outGoingPacket[38] = (byte)(longitude.bytes[2]);
+  //    outGoingPacket[39] = (byte)(longitude.bytes[3]);
+  //
+  //    outGoingPacket[40] = (byte)(hdop.bytes[0]);
+  //    outGoingPacket[41] = (byte)(hdop.bytes[1]);
+  //    outGoingPacket[42] = (byte)(hdop.bytes[2]);
+  //    outGoingPacket[43] = (byte)(hdop.bytes[3]);
+  //
+  //    //multiply speed by 100 to retain two decimal precision when moved to jetson
+  //    outGoingPacket[44] = (byte)((int)(GPS.speed * 100) & 0b0000000011111111);
+  //    outGoingPacket[45] = (byte)((int)(GPS.speed * 100) >> 8);
+  //    outGoingPacket[46] = (byte)((int)(GPS.angle * 100) & 0b0000000011111111);
+  //    outGoingPacket[47] = (byte)((int)(GPS.angle * 100) >> 8);
+  //    outGoingPacket[48] = (byte)((int)(GPS.altitude * 100) & 0b0000000011111111);
+  //    outGoingPacket[49] = (byte)((int)(GPS.altitude * 100) >> 8);
+  //
+  //    outGoingPacket[50] = (byte)(GPS.fix);
+  //    outGoingPacket[51] = (byte)(GPS.fixquality);
+  //    outGoingPacket[52] = (byte)(GPS.satellites);
+  //    outGoingPacket[53] = (byte)(TSS_states);
+  //
+  //    byte PEC = outGoingPacket[0];
+  //    for (int i = 1; i < outGoingPacketLength - 1; i++) {
+  //      PEC ^= outGoingPacket[i];
+  //    }
+  //    outGoingPacket[outGoingPacketLength - 1] = PEC;
+  //    Serial.write(outGoingPacket, outGoingPacketLength);
+  //
+  //    lastSend = micros();
+  //  }
 
   if (Serial.available() > 0) {
     serialEvent();

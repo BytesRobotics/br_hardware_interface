@@ -44,6 +44,8 @@ class TSS
     unsigned long leftreleaseThreshold();
     bool r_impact();
     bool l_impact();
+    bool r_release();
+    bool l_release();
     long rightlastDebounceTime = 0; //stores when the debounce begins, doubles as exact time impact occured
     long leftlastDebounceTime = 0;
     unsigned long rightImpactTime; //system time at which the sensors are impacted

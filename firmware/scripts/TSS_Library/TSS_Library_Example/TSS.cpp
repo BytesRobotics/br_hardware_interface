@@ -73,22 +73,22 @@ bool TSS::l_impact()
 
 void TSS::send_cmd(char addr, byte aCMD)  //send command to sensor
 {
- wire2.beginTransmission(addr);
- wire2.write(aCMD);
- wire2.endTransmission(true);
+ wire1.beginTransmission(addr);
+ wire1.write(aCMD);
+ wire1.endTransmission(true);
 }
 
 bool TSS::sensor_connect(char addr) { //connect to sensor
- wire2.beginTransmission(addr);
-  return wire2.endTransmission(true);
+ wire1.beginTransmission(addr);
+  return wire1.endTransmission(true);
 }
 
 void TSS::read_sensor_value(char addr, unsigned long& value) { //read sensor value
-  wire2.requestFrom(addr, 3);
-  value = (wire2.read() << 16);
-  value = value | (wire2.read() << 8);
-  value = value | wire2.read();
-  wire2.endTransmission(true);
+  wire1.requestFrom(addr, 3);
+  value = (wire1.read() << 16);
+  value = value | (wire1.read() << 8);
+  value = value | wire1.read();
+  wire1.endTransmission(true);
 }
 
 bool TSS::init_sensor(char addr) { //initialize sensor

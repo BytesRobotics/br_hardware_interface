@@ -100,15 +100,39 @@ bool TSS::l_impact()
   return false;
 }
 
+bool TSS::r_release()
+{
+  right_newval();
+  if ((filter_rightval() < rightreleaseThreshold()) && ((micros() - rightlastDebounceTime) > debounceDelay))
+  {
+    rightlastDebounceTime = micros(); //store system time for next time
+    //Serial.println(rightlastDebounceTime);
+    return true;
+  }
+  return false;
+}
+
+bool TSS::l_release()
+{
+  left_newval();
+  if ((filter_leftval() < leftreleaseThreshold()) && ((micros() - leftlastDebounceTime) > debounceDelay))
+  {
+    leftlastDebounceTime = micros(); //store system time for next time
+    //Serial.println(leftlastDebounceTime);
+    return true;
+  }
+  return false;
+}
+
 void TSS::send_cmd(char addr, byte aCMD)  //send command to sensor
 {
- wire2.beginTransmission(addr);
- wire2.write(aCMD);
- wire2.endTransmission(true);
+  wire2.beginTransmission(addr);
+  wire2.write(aCMD);
+  wire2.endTransmission(true);
 }
 
 bool TSS::sensor_connect(char addr) { //connect to sensor
- wire2.beginTransmission(addr);
+  wire2.beginTransmission(addr);
   return wire2.endTransmission(true);
 }
 
@@ -181,7 +205,7 @@ unsigned long TSS::filter_rightval() {
 }
 
 unsigned long TSS::right_getaverage() {
-  return right.get_average();
+  return right.get_averag  e();
 }
 
 unsigned long TSS::filter_leftval() {

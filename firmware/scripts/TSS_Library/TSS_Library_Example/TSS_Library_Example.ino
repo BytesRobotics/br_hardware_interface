@@ -1,15 +1,19 @@
 #include "TSS.h"
 #include "Wire.h"
+#include "wiring_private.h"
 TSS tube;
 
 void setup()
 {
-  tube.wire2.begin();           //begins I2C communication
-  tube.wire2.setClock(400000);  //sets I2C speed
+  tube.wire1.begin();           //begins I2C communication
+  tube.wire1.setClock(100000);  //sets I2C speed
+//  pinPeripheral(36, PIO_SERCOM_ALT); //set wire1 pins in the MUX for sercom
+//  pinPeripheral(37, PIO_SERCOM_ALT);
 
+  tss_front_left = TSS(wire1, 0x76);
   Serial.begin(115200);
   while (!Serial);        //Wait for Serial to begin
-  Serial.println("wire1 setup");
+  Serial.println("wire setup");
 
   ///initialize right and left sensors
   tube.init_sensor(0x77);
@@ -54,7 +58,8 @@ void graph_it() {
 
 void loop()
 {
-  //Serial.println("Hello, world!");
   graph_it();
-  //Serial.println("looping");
+  //  if (tube.r_impact() || tube.l_impact()) {
+  //    Serial.println("Ur gay");
+  //  }
 }
