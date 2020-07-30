@@ -71,15 +71,44 @@ bool TSS::l_impact()
   return false;
 }
 
+void TSS::graph_it()
+{
+  if (right_newval()) //if there's a new sensor value...
+  {
+    Serial.println(filter_rightval());  //print the filtered value to remove some noise
+    Serial.print("  "); //spaces for the Serial plotter
+    Serial.print(right_getaverage()); //print running average
+    Serial.print("  ");
+    Serial.print(rightimpactThreshold()); //print trigger value
+    Serial.print("  ");
+    Serial.print(rightreleaseThreshold()); //print trigger value
+    Serial.print("  ");
+  }
+
+  if (left_newval())
+  {
+    Serial.print(filter_leftval());
+    Serial.print("  ");
+    Serial.print(left_getaverage());
+    Serial.print("  ");
+    Serial.print(leftimpactThreshold());
+    Serial.print("  ");
+    Serial.print(leftreleaseThreshold());
+    Serial.print("  ");
+
+  }
+  return;
+}
+
 void TSS::send_cmd(char addr, byte aCMD)  //send command to sensor
 {
- wire1.beginTransmission(addr);
- wire1.write(aCMD);
- wire1.endTransmission(true);
+  wire1.beginTransmission(addr);
+  wire1.write(aCMD);
+  wire1.endTransmission(true);
 }
 
 bool TSS::sensor_connect(char addr) { //connect to sensor
- wire1.beginTransmission(addr);
+  wire1.beginTransmission(addr);
   return wire1.endTransmission(true);
 }
 

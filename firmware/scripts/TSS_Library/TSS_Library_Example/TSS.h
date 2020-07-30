@@ -25,8 +25,8 @@
 class TSS
 {
   public:
-    TwoWire wire1(&sercom0, 36, 37); //I2C setup for PA04 and PA05 (SDA & SCL)
-    TwoWire wire2(&sercom2, 38, 39); //I2C setup for PA08 and PA09
+    TwoWire wire1 = TwoWire(&sercom0, 36, 37); //I2C setup for PA04 and PA05 (SDA & SCL)
+    TwoWire wire2 = TwoWire(&sercom2, 38, 39); //I2C setup for PA08 and PA09
     void setImpactThreshold(int x);
     void setReleaseThreshold(int x);
     void send_cmd(char addr, byte aCMD);
@@ -35,6 +35,7 @@ class TSS
     bool init_sensor(char addr); //initialize sensor, include I2C address in brackets
     bool left_newval();
     bool right_newval();
+    void graph_it();
     unsigned long filter_rightval();
     unsigned long filter_leftval();
     unsigned long right_getaverage();
