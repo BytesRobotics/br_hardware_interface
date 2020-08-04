@@ -2,47 +2,55 @@
 #include "TSS.h"
 //class SmartArray is put int the .cpp because it only needs to be accessed internally by the library
 //and not by the end user
-class SmartArray { //array class used to produce running average to compare current sensor reading to. At size 2,000, it is averaging over ~1 second
-  public:
-    SmartArray() { }
-    unsigned long get_element(unsigned int index) {
-      return arr[(index + current_index_) % array_size_];
-    }
-    void add_element(unsigned long element) {
-      current_index_++;
-      current_index_ %= array_size_; //
-      current_sum_ -= arr[current_index_];
-      current_sum_of_differences_ -= (float(arr[(current_index_ + 1) % array_size_]) - arr[current_index_]);
+class SmartArray   //array class used to produce running average to compare current sensor reading to. At size 2,000, it is averaging over ~1 second
+{
+public:
+  SmartArray() {}
+  unsigned long get_element(unsigned int index)
+  {
+    return arr[(index + current_index_) % array_size_];
+  }
+  void add_element(unsigned long element)
+  {
+    current_index_++;
+    current_index_ %= array_size_;   //
+    current_sum_ -= arr[current_index_];
+    current_sum_of_differences_ -=
+      (float(arr[(current_index_ + 1) % array_size_]) - arr[current_index_]);
 
-      arr[current_index_] = element;
+    arr[current_index_] = element;
 
-      current_sum_ += arr[current_index_];
-      current_sum_of_differences_ += (float(arr[current_index_]) - arr[(current_index_ - 1) % array_size_]);
-    }
+    current_sum_ += arr[current_index_];
+    current_sum_of_differences_ +=
+      (float(arr[current_index_]) - arr[(current_index_ - 1) % array_size_]);
+  }
 
-    unsigned long* get_array() {
-      return arr;
-    }
+  unsigned long * get_array()
+  {
+    return arr;
+  }
 
-    unsigned long get_average() {
-      return current_sum_ / array_size_;
-    }
+  unsigned long get_average()
+  {
+    return current_sum_ / array_size_;
+  }
 
-    unsigned long get_filtered_value(int filter_length) {
-      //      unsigned long sum = 0;
-      //      for (int i = 0; i < 2; i++) { //do this code 'filter length' times
-      //        sum += get_element(-1); //sum = sum + past sensor value(i)
-      //      }
-      //      return sum / 2;
-      return get_element(0);
-    }
+  unsigned long get_filtered_value(int filter_length)
+  {
+    //      unsigned long sum = 0;
+    //      for (int i = 0; i < 2; i++) { //do this code 'filter length' times
+    //        sum += get_element(-1); //sum = sum + past sensor value(i)
+    //      }
+    //      return sum / 2;
+    return get_element(0);
+  }
 
-  private:
-    unsigned long arr[SMART_ARRAY_SIZE] {0};
-    const unsigned int array_size_ = SMART_ARRAY_SIZE;
-    unsigned int current_index_ = 0;
-    unsigned long long current_sum_ = 0;
-    float current_sum_of_differences_ = 0;
+private:
+  unsigned long arr[SMART_ARRAY_SIZE] {0};
+  const unsigned int array_size_ = SMART_ARRAY_SIZE;
+  unsigned int current_index_ = 0;
+  unsigned long long current_sum_ = 0;
+  float current_sum_of_differences_ = 0;
 };
 
 SmartArray left, right; //two instances of the SmartArray to handle the left and right sensors
@@ -50,7 +58,8 @@ SmartArray left, right; //two instances of the SmartArray to handle the left and
 bool TSS::r_impact()
 {
   right_newval();
-  if ((filter_rightval() > rightimpactThreshold()) && ((micros() - rightlastDebounceTime) > debounceDelay))
+  if ((filter_rightval() > rightimpactThreshold()) &&
+    ((micros() - rightlastDebounceTime) > debounceDelay))
   {
     rightlastDebounceTime = micros(); //store system time for next time
     //Serial.println(rightlastDebounceTime);
@@ -62,7 +71,8 @@ bool TSS::r_impact()
 bool TSS::l_impact()
 {
   left_newval();
-  if ((filter_leftval() > leftimpactThreshold()) && ((micros() - leftlastDebounceTime) > debounceDelay))
+  if ((filter_leftval() > leftimpactThreshold()) &&
+    ((micros() - leftlastDebounceTime) > debounceDelay))
   {
     leftlastDebounceTime = micros(); //store system time for next time
     //Serial.println(leftlastDebounceTime);
@@ -73,17 +83,19 @@ bool TSS::l_impact()
 
 void TSS::send_cmd(char addr, byte aCMD)  //send command to sensor
 {
- wire2.beginTransmission(addr);
- wire2.write(aCMD);
- wire2.endTransmission(true);
+  wire2.beginTransmission(addr);
+  wire2.write(aCMD);
+  wire2.endTransmission(true);
 }
 
-bool TSS::sensor_connect(char addr) { //connect to sensor
- wire2.beginTransmission(addr);
+bool TSS::sensor_connect(char addr)   //connect to sensor
+{
+  wire2.beginTransmission(addr);
   return wire2.endTransmission(true);
 }
 
-void TSS::read_sensor_value(char addr, unsigned long& value) { //read sensor value
+void TSS::read_sensor_value(char addr, unsigned long & value)  //read sensor value
+{
   wire2.requestFrom(addr, 3);
   value = (wire2.read() << 16);
   value = value | (wire2.read() << 8);
@@ -91,7 +103,8 @@ void TSS::read_sensor_value(char addr, unsigned long& value) { //read sensor val
   wire2.endTransmission(true);
 }
 
-bool TSS::init_sensor(char addr) { //initialize sensor
+bool TSS::init_sensor(char addr)   //initialize sensor
+{
   if (sensor_connect(addr)) {
     send_cmd(addr, MS5xxx_CMD_RESET);
     sensor_read_start_time = micros(); //record the current system time as the time the sensors began reading
@@ -103,15 +116,18 @@ bool TSS::init_sensor(char addr) { //initialize sensor
   }
 }
 
-void TSS::setImpactThreshold(int x) { //setter for impactThreshold
+void TSS::setImpactThreshold(int x)   //setter for impactThreshold
+{
   _impactThreshold = x;
 }
 
-void TSS::setReleaseThreshold(int x) { //setter for releaseThreshold
+void TSS::setReleaseThreshold(int x)   //setter for releaseThreshold
+{
   _releaseThreshold = x;
 }
 
-bool TSS::right_newval() { //returns true or false depending on if the right sensor has a new value
+bool TSS::right_newval()   //returns true or false depending on if the right sensor has a new value
+{
   if (!right_sensor_is_reading) { //"If right sensor is NOT reading"
     right_sensor_read_start_time = micros(); //record the current system time as the time the sensor began reading
     send_cmd(0x76, MS5xxx_CMD_ADC_CONV + MS5xxx_CMD_ADC_D1 + MS5xxx_CMD_ADC_256); //send command to start reading sensor
@@ -129,7 +145,8 @@ bool TSS::right_newval() { //returns true or false depending on if the right sen
   }
 }
 
-bool TSS::left_newval() {
+bool TSS::left_newval()
+{
   if (!left_sensor_is_reading) {
     left_sensor_read_start_time = micros();
     send_cmd(0x77, MS5xxx_CMD_ADC_CONV + MS5xxx_CMD_ADC_D1 + MS5xxx_CMD_ADC_256);
@@ -147,34 +164,42 @@ bool TSS::left_newval() {
   }
 }
 
-unsigned long TSS::filter_rightval() {
+unsigned long TSS::filter_rightval()
+{
   return right.get_filtered_value(2);
 }
 
-unsigned long TSS::right_getaverage() {
+unsigned long TSS::right_getaverage()
+{
   return right.get_average();
 }
 
-unsigned long TSS::filter_leftval() {
+unsigned long TSS::filter_leftval()
+{
   return left.get_filtered_value(2);
 }
 
-unsigned long TSS::left_getaverage() {
+unsigned long TSS::left_getaverage()
+{
   return left.get_average();
 }
 
-unsigned long TSS::rightimpactThreshold() {
-  return (_impactThreshold + right.get_average());
+unsigned long TSS::rightimpactThreshold()
+{
+  return _impactThreshold + right.get_average();
 }
 
-unsigned long TSS::leftimpactThreshold() {
-  return (_impactThreshold + left.get_average());
+unsigned long TSS::leftimpactThreshold()
+{
+  return _impactThreshold + left.get_average();
 }
 
-unsigned long TSS::rightreleaseThreshold() {
-  return (right.get_average() - _releaseThreshold);
+unsigned long TSS::rightreleaseThreshold()
+{
+  return right.get_average() - _releaseThreshold;
 }
 
-unsigned long TSS::leftreleaseThreshold() {
-  return (left.get_average() - _releaseThreshold);
+unsigned long TSS::leftreleaseThreshold()
+{
+  return left.get_average() - _releaseThreshold;
 }

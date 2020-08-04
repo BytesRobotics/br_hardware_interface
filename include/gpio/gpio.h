@@ -32,12 +32,12 @@ int gpio_set_value(unsigned int gpio, unsigned int value);
 /****************************************************************
  * gpio_get_value
  ****************************************************************/
-int gpio_get_value(unsigned int gpio, unsigned int *value);
+int gpio_get_value(unsigned int gpio, unsigned int * value);
 
 /****************************************************************
  * gpio_set_edge
  ****************************************************************/
-int gpio_set_edge(unsigned int gpio, char *edge);
+int gpio_set_edge(unsigned int gpio, char * edge);
 
 /****************************************************************
  * gpio_fd_open

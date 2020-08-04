@@ -21,7 +21,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-
+find_package(tss_msgs REQUIRED)
 
 
 add_executable(br_hw_node
@@ -42,6 +42,7 @@ ament_target_dependencies(br_hw_node
         std_msgs
         sensor_msgs
         geometry_msgs
+        tss_msgs
 )
 
 install(TARGETS br_hw_node

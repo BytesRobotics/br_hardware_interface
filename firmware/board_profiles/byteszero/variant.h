@@ -52,7 +52,8 @@ extern "C" unsigned int PINCOUNT_fn();
 #define portOutputRegister(port) (&(port->OUT.reg))
 #define portInputRegister(port)  (&(port->IN.reg))
 #define portModeRegister(port)   (&(port->DIR.reg))
-#define digitalPinHasPWM(P)      (g_APinDescription[P].ulPWMChannel != NOT_ON_PWM || g_APinDescription[P].ulTCChannel != NOT_ON_TIMER)
+#define digitalPinHasPWM(P)      (g_APinDescription[P].ulPWMChannel != NOT_ON_PWM || \
+  g_APinDescription[P].ulTCChannel != NOT_ON_TIMER)
 
 /*
  * digitalPinToTimer(..) is AVR-specific and is not defined for SAMD
@@ -64,7 +65,7 @@ extern "C" unsigned int PINCOUNT_fn();
 // #define digitalPinToTimer(P)
 
 //Battery
-#define ADC_BATTERY	(33u)
+#define ADC_BATTERY     (33u)
 
 // LEDs
 // ----
@@ -80,13 +81,13 @@ extern "C" unsigned int PINCOUNT_fn();
 #define PIN_A4 (19u)
 #define PIN_A5 (20u)
 #define PIN_A6 (21u)
-static const uint8_t A0  = PIN_A0;
-static const uint8_t A1  = PIN_A1;
-static const uint8_t A2  = PIN_A2;
-static const uint8_t A3  = PIN_A3;
-static const uint8_t A4  = PIN_A4;
-static const uint8_t A5  = PIN_A5;
-static const uint8_t A6  = PIN_A6;
+static const uint8_t A0 = PIN_A0;
+static const uint8_t A1 = PIN_A1;
+static const uint8_t A2 = PIN_A2;
+static const uint8_t A3 = PIN_A3;
+static const uint8_t A4 = PIN_A4;
+static const uint8_t A5 = PIN_A5;
+static const uint8_t A6 = PIN_A6;
 #define ADC_RESOLUTION 12
 
 // SPI Interfaces
@@ -102,10 +103,10 @@ static const uint8_t A6  = PIN_A6;
 #define PAD_SPI_TX    SPI_PAD_0_SCK_1
 #define PAD_SPI_RX    SERCOM_RX_PAD_3
 
-static const uint8_t SS   = PIN_SPI_SS;   // SPI Slave SS not used. Set here only for reference.
+static const uint8_t SS = PIN_SPI_SS;     // SPI Slave SS not used. Set here only for reference.
 static const uint8_t MOSI = PIN_SPI_MOSI;
 static const uint8_t MISO = PIN_SPI_MISO;
-static const uint8_t SCK  = PIN_SPI_SCK;
+static const uint8_t SCK = PIN_SPI_SCK;
 
 // SPI1: Connected to SD
 #define PIN_SPI1_MISO (29u)
@@ -115,10 +116,10 @@ static const uint8_t SCK  = PIN_SPI_SCK;
 #define PERIPH_SPI1   sercom4
 #define PAD_SPI1_TX   SPI_PAD_0_SCK_1
 #define PAD_SPI1_RX   SERCOM_RX_PAD_3
-static const uint8_t SS1   = PIN_SPI1_SS;
+static const uint8_t SS1 = PIN_SPI1_SS;
 static const uint8_t MOSI1 = PIN_SPI1_MOSI;
 static const uint8_t MISO1 = PIN_SPI1_MISO;
-static const uint8_t SCK1  = PIN_SPI1_SCK;
+static const uint8_t SCK1 = PIN_SPI1_SCK;
 
 // Needed for SD library
 #define SDCARD_SPI      SPI1
