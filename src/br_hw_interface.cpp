@@ -10,6 +10,7 @@ BRHardwareInterface::BRHardwareInterface(const std::string & port)
 : Node("hardware_interface"),
   connection(port, 115200)
 {
+  port_ = port;
   configure_parameters();
 
   /// Publications
@@ -67,7 +68,12 @@ BRHardwareInterface::BRHardwareInterface(const std::string & port)
   connection.set_controller(0, 0, 0);
   usleep(40000);
   while (!connection.read_controller()) {
-    RCLCPP_ERROR(this->get_logger(), "Could not read hardware controller from /dev/ttyACM0");
+    if(!rclcpp::shutdown()) {
+      RCLCPP_ERROR(
+        this->get_logger(), "Could not read hardware controller from %s", port_.c_str());
+    } else {
+      return;
+    }
     usleep(20000);
   }
   last_left_encoder_position_ = static_cast<double>(connection.get_left_encoder()) /
@@ -102,8 +108,13 @@ void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time)
 {
   auto time_stamp = this->now();
 
-  while (!connection.read_controller()) {
-    RCLCPP_DEBUG(this->get_logger(), "Could not read hardware controller from /dev/ttyACM0");
+  while (!connection.read_controller()) {\
+    if(!rclcpp::shutdown()) {
+      RCLCPP_ERROR(
+        this->get_logger(), "Could not read hardware controller from %s", port_.c_str());
+    } else {
+      return;
+    }
   }
 
   double left_encoder_position =
