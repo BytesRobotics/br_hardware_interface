@@ -108,7 +108,7 @@ void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time)
 {
   auto time_stamp = this->now();
 
-  while (!connection.read_controller()) {\
+  while (!connection.read_controller()) {
     if(!rclcpp::shutdown()) {
       RCLCPP_ERROR(
         this->get_logger(), "Could not read hardware controller from %s", port_.c_str());
