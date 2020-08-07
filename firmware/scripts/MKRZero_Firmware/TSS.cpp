@@ -205,7 +205,7 @@ unsigned long TSS::filter_rightval() {
 }
 
 unsigned long TSS::right_getaverage() {
-  return right.get_averag  e();
+  return right.get_average();
 }
 
 unsigned long TSS::filter_leftval() {
