@@ -186,7 +186,7 @@ void setup() {
   attachInterrupt(1, 6, 6, ch0_rising_interrupt,    RISING); //PB06 EXTINT6 y
   attachInterrupt(1, 7, 7, ch1_rising_interrupt,    RISING); //PB07 EXTINT7 y
   attachInterrupt(1, 10, 10, ch2_rising_interrupt,  RISING); //PB10 EXTINT10 y
-  attachInterrupt(1, 11, 11, ch3_rising_interrupt,   RISING); //PB03 EXTINT11 y
+  attachInterrupt(1, 11, 11, ch3_rising_interrupt,   RISING); //PB11 EXTINT11 y
   attachInterrupt(0, 20, 4, ch4_rising_interrupt,   RISING); //PA20 EXTINT4 y
   attachInterrupt(1, 5, 5, ch5_rising_interrupt,    RISING); //PB05 EXTINT5 y
   attachInterrupt(0, 16, 0, ch6_rising_interrupt,   RISING); //PA16 EXTINT0 y
@@ -331,18 +331,18 @@ void loop() {
       outGoingPacket[5] = (byte)(ch3_duty_cycle >> 8);
       outGoingPacket[6] = (byte)(ch4_duty_cycle & 0b0000000011111111);
       outGoingPacket[7] = (byte)(ch4_duty_cycle >> 8);
-      outGoingPacket[8] = (byte)(ch5_duty_cycle & 0b0000000011111111);
-      outGoingPacket[9] = (byte)(ch5_duty_cycle >> 8);
-      outGoingPacket[10] = (byte)(ch6_duty_cycle & 0b0000000011111111);
-      outGoingPacket[11] = (byte)(ch6_duty_cycle >> 8);
-      outGoingPacket[12] = (byte)(ch7_duty_cycle & 0b0000000011111111);
-      outGoingPacket[13] = (byte)(ch7_duty_cycle >> 8);
-      outGoingPacket[14] = (byte)(ch8_duty_cycle & 0b0000000011111111);
-      outGoingPacket[15] = (byte)(ch8_duty_cycle >> 8);
-      outGoingPacket[16] = (byte)(ch9_duty_cycle & 0b0000000011111111);
-      outGoingPacket[17] = (byte)(ch9_duty_cycle >> 8);
-      outGoingPacket[18] = (byte)(ch10_duty_cycle & 0b0000000011111111);
-      outGoingPacket[19] = (byte)(ch10_duty_cycle >> 8);
+      outGoingPacket[8] = (byte)(0 & 0b0000000011111111); //ch5_duty_cycle replaced with 0
+      outGoingPacket[9] = (byte)(0 >> 8); //ch5_duty_cycle replaced with 0
+      outGoingPacket[10] = (byte)(0 & 0b0000000011111111); //ch6_duty_cycle replaced with 0
+      outGoingPacket[11] = (byte)(0 >> 8); //ch6_duty_cycle replaced with 0
+      outGoingPacket[12] = (byte)(ch5_duty_cycle & 0b0000000011111111); //modified for 8 sensor setup, was 7
+      outGoingPacket[13] = (byte)(ch5_duty_cycle >> 8);
+      outGoingPacket[14] = (byte)(ch6_duty_cycle & 0b0000000011111111); //modified, was 8
+      outGoingPacket[15] = (byte)(ch6_duty_cycle >> 8);
+      outGoingPacket[16] = (byte)(ch7_duty_cycle & 0b0000000011111111); //modified, was 9
+      outGoingPacket[17] = (byte)(ch7_duty_cycle >> 8);
+      outGoingPacket[18] = (byte)(0 & 0b0000000011111111); //ch10_duty_cycle replaced with 0
+      outGoingPacket[19] = (byte)(0 >> 8); //ch10_duty_cycle replaced with 0
       outGoingPacket[20] = (byte)(ch11_duty_cycle & 0b0000000011111111);
       outGoingPacket[21] = (byte)(ch11_duty_cycle >> 8);
       outGoingPacket[24] = (byte)(left_wheel_pulses & 0b0000000011111111);
