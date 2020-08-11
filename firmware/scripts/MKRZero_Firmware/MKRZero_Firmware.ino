@@ -73,7 +73,7 @@ boolean wdt_isTripped = false; //so  the timer is not tripped continuously
 
 //For sending packet
 unsigned long lastSend = 0;
-unsigned long sendPeriod = 20000; //in microsoconds (1/Hz*1000000)
+unsigned long sendPeriod = 15000; //in microsoconds (1/Hz*1000000)
 const int outGoingPacketLength = 55;
 
 // Forward definitions for interrupt functions
