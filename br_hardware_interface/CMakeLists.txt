@@ -22,7 +22,7 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tss_msgs REQUIRED)
-
+find_package(br_hardware_interface_msgs REQUIRED)
 
 add_executable(br_hw_node
         src/br_hw_node.cpp
@@ -43,6 +43,7 @@ ament_target_dependencies(br_hw_node
         sensor_msgs
         geometry_msgs
         tss_msgs
+        br_hardware_interface_msgs
 )
 
 install(TARGETS br_hw_node

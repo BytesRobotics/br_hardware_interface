@@ -35,7 +35,7 @@ BRHardwareInterface::BRHardwareInterface(const std::string & port)
   rear_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>(
     "distance/rear", rclcpp::SensorDataQoS());
   rear_left_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>(
-    "distance/rear_left",rclcpp::SensorDataQoS());
+    "distance/rear_left", rclcpp::SensorDataQoS());
   rear_right_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>(
     "distance/rear_right", rclcpp::SensorDataQoS());
   rear_left_bottom_dist_pub_ = this->create_publisher<sensor_msgs::msg::Range>(
@@ -57,7 +57,10 @@ BRHardwareInterface::BRHardwareInterface(const std::string & port)
     rclcpp::SystemDefaultsQoS().transient_local());
 
   tss_pub_ = this->create_publisher<tss_msgs::msg::TSSState>(
-    "tss",rclcpp::SensorDataQoS());
+    "tss", rclcpp::SensorDataQoS());
+
+  debug_pub_ = this->create_publisher<br_hardware_interface_msgs::msg::HardwareInterfaceDebug>(
+    "hw_interface/debug", rclcpp::SensorDataQoS());
 
 
   /// Subscriptions
@@ -68,7 +71,7 @@ BRHardwareInterface::BRHardwareInterface(const std::string & port)
   connection.set_controller(0, 0, 0);
   usleep(40000);
   while (!connection.read_controller()) {
-    if(rclcpp::ok()) {
+    if (rclcpp::ok()) {
       RCLCPP_ERROR(
         this->get_logger(), "Could not read hardware controller from %s", port_.c_str());
     } else {
@@ -99,6 +102,10 @@ void BRHardwareInterface::update()
   std::chrono::steady_clock::duration elapsed_time = now - last_time_;
 
   read(elapsed_time);
+  if (debug_) {
+    debug_msg_.header.stamp = this->now();
+    debug_pub_->publish(debug_msg_);
+  }
   write(elapsed_time);
 
   last_time_ = now;
@@ -109,7 +116,7 @@ void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time)
   auto time_stamp = this->now();
 
   while (!connection.read_controller()) {
-    if(rclcpp::ok()) {
+    if (rclcpp::ok()) {
       RCLCPP_ERROR(
         this->get_logger(), "Could not read hardware controller from %s", port_.c_str());
     } else {
@@ -120,14 +127,19 @@ void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time)
   double left_encoder_position =
     static_cast<double>(connection.get_left_encoder() - initial_left_encoder_position_) /
     encoder_ticks_per_rot_ * 2 * M_PI;
+  debug_msg_.l_encoder_pose = left_encoder_position;
   double right_encoder_position =
     -static_cast<double>(connection.get_right_encoder() - initial_right_encoder_position_) /
     encoder_ticks_per_rot_ * 2 * M_PI;
+  debug_msg_.r_encoder_pose = right_encoder_position;
+
 
   left_wheel_angular_velocity_ = (left_encoder_position - last_left_encoder_position_) /
     (elapsed_time.count() / 1000000000.0);
+  debug_msg_.l_velocity = left_wheel_angular_velocity_;
   right_wheel_angular_velocity_ = (right_encoder_position - last_right_encoder_position_) /
     (elapsed_time.count() / 1000000000.0);
+  debug_msg_.r_velocity = right_wheel_angular_velocity_;
 
   auto joint_states_msg = sensor_msgs::msg::JointState();
   joint_states_msg.header.stamp = time_stamp;
@@ -251,26 +263,26 @@ void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time)
   }
 
   /// TSS
-  tss_msgs::msg::TSSState  tss_state;
+  tss_msgs::msg::TSSState tss_state;
   tss_state.header.stamp = this->now();
   tss_state.header.frame_id = "chassis";
 
   tss_state.names = std::vector<std::string>{"front_left", "front_right",
     "rear_left", "rear_right"};
-  tss_state.frame_ids  = std::vector<std::string>{"tss_front_left", "tss_front_right",
+  tss_state.frame_ids = std::vector<std::string>{"tss_front_left", "tss_front_right",
     "tss_rear_left", "tss_rear_right"};
-  tss_state.front_edge =  std::vector<bool>{true, true, false, false};
-  tss_state.rear_edge  =  std::vector<bool>{false, false, true, true};
-  tss_state.left_edge  =  std::vector<bool>{true, false, true, false};
-  tss_state.right_edge =  std::vector<bool>{false, true, false, true};
+  tss_state.front_edge = std::vector<bool>{true, true, false, false};
+  tss_state.rear_edge = std::vector<bool>{false, false, true, true};
+  tss_state.left_edge = std::vector<bool>{true, false, true, false};
+  tss_state.right_edge = std::vector<bool>{false, true, false, true};
 
   tss_state.thickness = std::vector<double>{tss_thickness_, tss_thickness_,
     tss_thickness_, tss_thickness_};
 
-  tss_state.width  =  std::vector<double>{0.4, 0.4, 0.4, 0.4};
-  tss_state.height =  std::vector<double>{0.3, 0.3, 0.3, 0.3};
+  tss_state.width = std::vector<double>{0.4, 0.4, 0.4, 0.4};
+  tss_state.height = std::vector<double>{0.3, 0.3, 0.3, 0.3};
 
-  tss_state.state = std::vector<bool>{connection.tss_has_collision(TSS::front_left) ,
+  tss_state.state = std::vector<bool>{connection.tss_has_collision(TSS::front_left),
     connection.tss_has_collision(TSS::front_right),
     connection.tss_has_collision(TSS::rear_left),
     connection.tss_has_collision(TSS::rear_right)};
@@ -295,11 +307,21 @@ void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time
   }
 
   /// Run PIDs
-  auto right_cmd = right_pid_.update(
-    angular_velocity_right_setpoint - right_wheel_angular_velocity_, elapsed_time);
-  auto left_cmd = left_pid_.update(
-    angular_velocity_left_setpoint - left_wheel_angular_velocity_,
-    elapsed_time);
+  double p_term, i_term, d_term;
+
+  double r_error = angular_velocity_right_setpoint - right_wheel_angular_velocity_;
+  auto right_cmd = right_pid_.update(r_error, elapsed_time, p_term, i_term, d_term);
+  debug_msg_.r_error = r_error;
+  debug_msg_.r_p = p_term;
+  debug_msg_.r_i = i_term;
+  debug_msg_.r_d = d_term;
+
+  double l_error = angular_velocity_right_setpoint - right_wheel_angular_velocity_;
+  auto left_cmd = left_pid_.update(l_error, elapsed_time, p_term, i_term, d_term);
+  debug_msg_.l_error = l_error;
+  debug_msg_.l_p = p_term;
+  debug_msg_.l_i = i_term;
+  debug_msg_.l_d = d_term;
 
   /// Control Deadzones
   if (std::abs(left_cmd) < control_deadzone_) {
@@ -308,6 +330,12 @@ void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time
   if (std::abs(right_cmd) < control_deadzone_) {
     right_cmd = 0;
   }
+
+  /// Update debug message
+  debug_msg_.l_setpoint = angular_velocity_left_setpoint;
+  debug_msg_.l_cmd = left_cmd;
+  debug_msg_.r_setpoint = angular_velocity_right_setpoint;
+  debug_msg_.r_cmd = right_cmd;
 
   connection.set_controller(right_cmd, -left_cmd, 0);
 }
@@ -322,16 +350,23 @@ void BRHardwareInterface::configure_parameters()
   right_wheel_joint_name_ = this->declare_parameter("right_wheel_joint_name", "right_wheel_joint");
   control_deadzone_ = this->declare_parameter("control_deadzone", 0.015);
   tss_thickness_ = this->declare_parameter("tss_thickness", 0.1);
+  debug_ = this->declare_parameter("debug", false);
 
   double p = this->declare_parameter("pid_p", 0.1);
   left_pid_.set_p(p);
   right_pid_.set_p(p);
+  debug_msg_.l_kp = p;
+  debug_msg_.r_kp = p;
   double i = this->declare_parameter("pid_i", 0.0);
   left_pid_.set_i(i);
   right_pid_.set_i(i);
+  debug_msg_.l_ki = i;
+  debug_msg_.r_ki = i;
   double d = this->declare_parameter("pid_d", 0.0);
   left_pid_.set_d(d);
   right_pid_.set_d(d);
+  debug_msg_.l_kd = d;
+  debug_msg_.r_kd = d;
   double max_i = this->declare_parameter("pid_i_max", 5.0);
   left_pid_.set_i_clamp_max(max_i);
   right_pid_.set_i_clamp_max(max_i);
@@ -368,12 +403,18 @@ void BRHardwareInterface::configure_parameters()
         } else if (changed_parameter.name == "pid_p") {
           left_pid_.set_p(changed_parameter.value.double_value);
           right_pid_.set_p(changed_parameter.value.double_value);
+          debug_msg_.l_kp = changed_parameter.value.double_value;
+          debug_msg_.r_kp = changed_parameter.value.double_value;
         } else if (changed_parameter.name == "pid_i") {
           left_pid_.set_i(changed_parameter.value.double_value);
           right_pid_.set_i(changed_parameter.value.double_value);
+          debug_msg_.l_ki = changed_parameter.value.double_value;
+          debug_msg_.r_ki = changed_parameter.value.double_value;
         } else if (changed_parameter.name == "pid_d") {
           left_pid_.set_d(changed_parameter.value.double_value);
           right_pid_.set_d(changed_parameter.value.double_value);
+          debug_msg_.l_kd = changed_parameter.value.double_value;
+          debug_msg_.r_kd = changed_parameter.value.double_value;
         } else if (changed_parameter.name == "pid_i_max") {
           left_pid_.set_i_clamp_max(changed_parameter.value.double_value);
           right_pid_.set_i_clamp_max(changed_parameter.value.double_value);
@@ -383,8 +424,10 @@ void BRHardwareInterface::configure_parameters()
         } else if (changed_parameter.name == "pid_use_anti_windup") {
           left_pid_.set_anti_windup(changed_parameter.value.bool_value);
           right_pid_.set_anti_windup(changed_parameter.value.bool_value);
-        }  else if (changed_parameter.name == "tss_thickness") {
+        } else if (changed_parameter.name == "tss_thickness") {
           tss_thickness_ = changed_parameter.value.double_value;
+        } else if (changed_parameter.name == "debug") {
+          debug_ = changed_parameter.value.bool_value;
         }
 
       }

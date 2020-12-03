@@ -17,7 +17,7 @@
 * @param[in] min The minimum value that "value" should be able to be
 * @param[in] max The maximum value that "value" should be able to be
 */
-template < class T >
+template<class T>
 void constrain(T & value, T min, T max)
 {
   if (value > max) {
@@ -36,7 +36,7 @@ void constrain(T & value, T min, T max)
 * @param[in] outMax The maximum value for the range of the output
 * @return The input trnslated proportionally from range in to range out
 */
-template < class T >
+template<class T>
 T map(T input, T inMin, T inMax, T outMin, T outMax)
 {
   T output = (input - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;

@@ -15,6 +15,7 @@
 #include "std_msgs/msg/float64.hpp"
 #include "std_msgs/msg/int32.hpp"
 #include "tss_msgs/msg/tss_state.hpp"
+#include "br_hardware_interface_msgs/msg/hardware_interface_debug.hpp"
 
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -27,10 +28,11 @@
 
 inline double to_distance(int pulse_us, double speed_of_sound)
 {
-  return static_cast < double > (pulse_us) / 2000000.0 * speed_of_sound;
+  return static_cast<double>(pulse_us) / 2000000.0 * speed_of_sound;
 }
 
-class BRHardwareInterface: public rclcpp::Node {
+class BRHardwareInterface : public rclcpp::Node
+{
   rclcpp::TimerBase::SharedPtr timer_;
   std::chrono::steady_clock::time_point last_time_;    //! Time of last update
 
@@ -44,23 +46,25 @@ class BRHardwareInterface: public rclcpp::Node {
   PID left_pid_, right_pid_;
 
   /// Publishers
-  rclcpp::Publisher < sensor_msgs::msg::JointState > ::SharedPtr joint_states_publisher_;
-  rclcpp::Publisher < sensor_msgs::msg::Range > ::SharedPtr front_dist_pub_, front_left_dist_pub_,
-  front_right_dist_pub_, front_left_bottom_dist_pub_, front_right_bottom_dist_pub_, left_dist_pub_,
-  right_dist_pub_, rear_dist_pub_, rear_left_dist_pub_, rear_right_dist_pub_,
-  rear_left_bottom_dist_pub_, rear_right_bottom_dist_pub_;
-  rclcpp::Publisher < sensor_msgs::msg::NavSatFix > ::SharedPtr nav_sat_pub_;
-  rclcpp::Publisher < std_msgs::msg::Int32 > ::SharedPtr num_satellites_pub_;
-  rclcpp::Publisher < std_msgs::msg::Float64 > ::SharedPtr gps_speed_pub_, gps_angle_pub_;
-  rclcpp::Publisher < tss_msgs::msg::TSSState > ::SharedPtr tss_pub_;
-  /// Subscribers
-  rclcpp::Subscription < geometry_msgs::msg::Twist > ::SharedPtr cmd_vel_sub_;
-  void cmd_vel_cb(geometry_msgs::msg::Twist::SharedPtr msg);
+  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_states_publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr front_dist_pub_, front_left_dist_pub_,
+    front_right_dist_pub_, front_left_bottom_dist_pub_, front_right_bottom_dist_pub_,
+    left_dist_pub_,
+    right_dist_pub_, rear_dist_pub_, rear_left_dist_pub_, rear_right_dist_pub_,
+    rear_left_bottom_dist_pub_, rear_right_bottom_dist_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::NavSatFix>::SharedPtr nav_sat_pub_;
+  rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr num_satellites_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr gps_speed_pub_, gps_angle_pub_;
+  rclcpp::Publisher<tss_msgs::msg::TSSState>::SharedPtr tss_pub_;
+  rclcpp::Publisher<br_hardware_interface_msgs::msg::HardwareInterfaceDebug>::SharedPtr debug_pub_;
 
+  /// Subscribers
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
+  void cmd_vel_cb(geometry_msgs::msg::Twist::SharedPtr msg);
 
   /// Dynamically reconfigurable parameters
   rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
-  rclcpp::Subscription < rcl_interfaces::msg::ParameterEvent > ::SharedPtr parameter_event_sub_;
+  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
 
   /// Parameters
   int encoder_ticks_per_rot_ {};
@@ -75,6 +79,8 @@ class BRHardwareInterface: public rclcpp::Node {
   double velocity_x_ {}, velocity_theta_ {}; //! Set points from cmd_vel
   double control_deadzone_;
   std::string port_; ///! Port name for debug purposes
+  bool debug_;
+  br_hardware_interface_msgs::msg::HardwareInterfaceDebug debug_msg_;
 
   float last_longitude_, last_latitude_, last_altitude_;
 

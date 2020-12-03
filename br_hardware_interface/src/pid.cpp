@@ -4,9 +4,11 @@
 
 #include "br_hw_interface/pid.hpp"
 
-double PID::update(double error, std::chrono::steady_clock::duration dt)
+double PID::update(
+  double error, std::chrono::steady_clock::duration dt,
+  double & p_term, double & i_term, double & d_term)
 {
-  auto p_term = p_ * error;
+  p_term = p_ * error;
   if (use_anti_windup_) {
     /// If error passed zero (i.e. last and now have different signs) set the integral to zero
     if (last_error_ * error < 0 || error == 0) {
@@ -14,8 +16,8 @@ double PID::update(double error, std::chrono::steady_clock::duration dt)
     }
   }
   integral_ = std::min(std::max(integral_ + error * (dt.count() / 1000000000.0), min_i_), max_i_);
-  auto i_term = i_ * integral_;
-  auto d_term = d_ * (error - last_error_) / (dt.count() / 1000000000.0);
+  i_term = i_ * integral_;
+  d_term = d_ * (error - last_error_) / (dt.count() / 1000000000.0);
   last_error_ = error;
 
   auto output = std::min(std::max(last_cmd_ + (p_term + i_term + d_term), -1.0), 1.0);

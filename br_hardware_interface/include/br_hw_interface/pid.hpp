@@ -9,7 +9,8 @@
 #include <cmath>
 #include <algorithm>
 
-class PID {
+class PID
+{
   double p_ {0}, i_ {0}, d_ {0};
   double min_i_ {0}, max_i_ {0};
   bool use_anti_windup_ {true};
@@ -20,7 +21,9 @@ class PID {
   double last_cmd_ {0};
 
 public:
-  double update(double error, std::chrono::steady_clock::duration dt);
+  double update(
+    double error, std::chrono::steady_clock::duration dt,
+    double & p_term, double & i_term, double & d_term);
 
   void set_p(double p);
   void set_i(double i);
