@@ -135,10 +135,27 @@ void BRHardwareInterface::read(std::chrono::steady_clock::duration elapsed_time)
 
 
   left_wheel_angular_velocity_ = (left_encoder_position - last_left_encoder_position_) /
-    (elapsed_time.count() / 1000000000.0);
+    (elapsed_time.count() / 1.0e9);
+  // Apply filter
+  std::rotate(
+    left_encoder_history_.rbegin(),
+    left_encoder_history_.rbegin() + 1, left_encoder_history_.rend());
+  left_encoder_history_[0] = left_wheel_angular_velocity_;
+  left_wheel_angular_velocity_ = std::accumulate(
+    left_encoder_history_.begin(), left_encoder_history_.end(), 0.0) / 10;
+  // Debug
   debug_msg_.l_velocity = left_wheel_angular_velocity_;
+
   right_wheel_angular_velocity_ = (right_encoder_position - last_right_encoder_position_) /
-    (elapsed_time.count() / 1000000000.0);
+    (elapsed_time.count() / 1.0e9);
+  // Apply filter
+  std::rotate(
+    right_encoder_history_.rbegin(),
+    right_encoder_history_.rbegin() + 1, right_encoder_history_.rend());
+  right_encoder_history_[0] = right_wheel_angular_velocity_;
+  right_wheel_angular_velocity_ = std::accumulate(
+    right_encoder_history_.begin(), right_encoder_history_.end(), 0.0) / 10;
+  // Debug
   debug_msg_.r_velocity = right_wheel_angular_velocity_;
 
   auto joint_states_msg = sensor_msgs::msg::JointState();
@@ -316,7 +333,7 @@ void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time
   debug_msg_.r_i = i_term;
   debug_msg_.r_d = d_term;
 
-  double l_error = angular_velocity_right_setpoint - right_wheel_angular_velocity_;
+  double l_error = angular_velocity_left_setpoint - left_wheel_angular_velocity_;
   auto left_cmd = left_pid_.update(l_error, elapsed_time, p_term, i_term, d_term);
   debug_msg_.l_error = l_error;
   debug_msg_.l_p = p_term;

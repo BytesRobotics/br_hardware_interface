@@ -22,11 +22,10 @@ class IntrospectionGui:
         data = self.queue.get()
         self.t0 = stamp_to_float(data.header.stamp)
 
-        show_logger()
         # construct the window
-
-        with window("Introspector"):
-            add_plot("Plot", x_axis_name='time', yaxis2=True, height=-1)
+        with window("Introspector", width=950, height=600, x_pos=0, y_pos=0):
+            add_plot("Plot Right", x_axis_name='time', yaxis2=True, height=250)
+            add_plot("Plot Left", x_axis_name='time', yaxis2=True, height=250)
 
             zeros = [0 for i in range(self.plot_len + 1)]
             self.plot_r_velocity  = zeros.copy()
@@ -35,6 +34,13 @@ class IntrospectionGui:
             self.plot_r_p = zeros.copy()
             self.plot_r_i = zeros.copy()
             self.plot_r_d = zeros.copy()
+
+            self.plot_l_velocity  = zeros.copy()
+            self.plot_l_setpoint = zeros.copy()
+            self.plot_l_error = zeros.copy()
+            self.plot_l_p = zeros.copy()
+            self.plot_l_i = zeros.copy()
+            self.plot_l_d = zeros.copy()
 
             self.plot_t = [i for i in range(self.plot_len + 1)]
 
@@ -62,16 +68,38 @@ class IntrospectionGui:
         self.plot_r_i.append(data.r_i)
         self.plot_r_d.append(data.r_d)
 
-         # plotting new data
-        clear_plot("Plot")
-        # print(self.plot_r_velocity)
-        add_line_series("Plot", "Right Vel", self.plot_t, self.plot_r_velocity, weight=2)
-        add_line_series("Plot", "Right Setpoint ", self.plot_t, self.plot_r_setpoint, weight=2)
-        add_line_series("Plot", "Right Error", self.plot_t, self.plot_r_error, weight=2)
-        # add_line_series("Plot", "Right P", self.plot_t, self.plot_r_p, weight=2, axis=1)
-        # add_line_series("Plot", "Right I", self.plot_t, self.plot_r_i, weight=2, axis=1)
-        # add_line_series("Plot", "Right D", self.plot_t, self.plot_r_d, weight=2, axis=1)
+        self.plot_l_velocity.pop(0)
+        self.plot_l_setpoint.pop(0)
+        self.plot_l_error.pop(0)
+        self.plot_l_p.pop(0)
+        self.plot_l_i.pop(0)
+        self.plot_l_d.pop(0)
 
+        self.plot_l_velocity.append(data.l_velocity)
+        self.plot_l_setpoint.append(data.l_setpoint)
+        self.plot_l_error.append(data.l_error)
+        self.plot_l_p.append(data.l_p)
+        self.plot_l_i.append(data.l_i)
+        self.plot_l_d.append(data.l_d)
+
+
+         # plotting new data
+        clear_plot("Plot Right")
+        clear_plot("Plot Left")
+
+        add_line_series("Plot Right", "Right Vel", self.plot_t, self.plot_r_velocity, weight=2)
+        add_line_series("Plot Right", "Right Setpoint ", self.plot_t, self.plot_r_setpoint, weight=2)
+        add_line_series("Plot Right", "Right Error", self.plot_t, self.plot_r_error, weight=2)
+        add_line_series("Plot Right", "Right P", self.plot_t, self.plot_r_p, weight=2, axis=1)
+        add_line_series("Plot Right", "Right I", self.plot_t, self.plot_r_i, weight=2, axis=1)
+        add_line_series("Plot Right", "Right D", self.plot_t, self.plot_r_d, weight=2, axis=1)
+
+        add_line_series("Plot Left", "Left Vel", self.plot_t, self.plot_l_velocity, weight=2)
+        add_line_series("Plot Left", "Left Setpoint ", self.plot_t, self.plot_l_setpoint, weight=2)
+        add_line_series("Plot Left", "Left Error", self.plot_t, self.plot_l_error, weight=2)
+        add_line_series("Plot Left", "Left P", self.plot_t, self.plot_l_p, weight=2, axis=1)
+        add_line_series("Plot Left", "Left I", self.plot_t, self.plot_l_i, weight=2, axis=1)
+        add_line_series("Plot Left", "Left D", self.plot_t, self.plot_l_d, weight=2, axis=1)
 
 
 class IntrospectionUtil(Node):
