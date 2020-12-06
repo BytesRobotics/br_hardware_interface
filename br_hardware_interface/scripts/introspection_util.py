@@ -193,8 +193,8 @@ class IntrospectionGui:
             vel = [odom_twist.linear.x, odom_twist.linear.y, odom_twist.linear.z]
             ang_vel = [odom_twist.angular.x, odom_twist.angular.y, odom_twist.angular.z]
 
-            # vel = self.t260_rotation.apply(vel)
-            # ang_vel = self.t260_rotation.apply(ang_vel)
+            vel = self.t260_rotation.apply(vel)
+            ang_vel = self.t260_rotation.apply(ang_vel)
             x = vel[0]
             y = ang_vel[2]
             # print("linear", vel, "angular", ang_vel)
