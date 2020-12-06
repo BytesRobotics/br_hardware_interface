@@ -65,6 +65,14 @@ class IntrospectionGui:
             add_drawing("VelPlot", width=self.length, height=self.length)
         self.draw_vel_plot()
 
+        with window("VelIntrospector"):
+            add_plot("Angular Vel", x_axis_name='time', yaxis2=True, height=250)
+            add_plot("Linear Vel", x_axis_name='time', yaxis2=True, height=250)
+
+            self.angular_velocities = []
+            self.linear_velocities = []
+            self.vel_plot_t = []
+            self.vel_cmd = []
 
 
     def draw_vel_plot(self):
@@ -192,6 +200,29 @@ class IntrospectionGui:
             r = (xscale*x + 1)
             theta = -yscale * y
             draw_arrow("VelPlot", [offset + r*math.cos(theta), offset + r*math.sin(theta)], [self.length/2, self.length/2], [200, 0, 255], 1, 10, tag="VelArrow")
+
+            # Plot graph
+            t = stamp_to_float(odom_data.header.stamp) - self.t0
+            self.angular_velocities.append(ang_vel)
+            self.linear_velocities.append(vel)
+            self.vel_plot_t.append(t)
+            self.vel_cmd.append([cmd_data.linear.x, cmd_data.angular.z])
+            while 5 < self.vel_plot_t[-1] - self.vel_plot_t[0]:
+                self.angular_velocities.pop(0)
+                self.linear_velocities.pop(0)
+                self.vel_cmd.pop(0)
+                self.vel_plot_t.pop(0)
+            add_line_series("Linear Vel", "vx", self.vel_plot_t, [y[0] for y in self.linear_velocities], weight=2, axis=1)
+            add_line_series("Linear Vel", "vy", self.vel_plot_t, [y[1] for y in self.linear_velocities], weight=2, axis=1)
+            add_line_series("Linear Vel", "vz", self.vel_plot_t, [y[2] for y in self.linear_velocities], weight=2, axis=1)
+
+            add_line_series("Linear Vel", "cmd_vx", self.vel_plot_t, [y[0] for y in self.vel_cmd], weight=2, axis=1)
+
+            add_line_series("Angular Vel", "vr", self.vel_plot_t, [y[0] for y in self.angular_velocities], weight=2, axis=1)
+            add_line_series("Angular Vel", "vp", self.vel_plot_t, [y[1] for y in self.angular_velocities], weight=2, axis=1)
+            add_line_series("Angular Vel", "vy", self.vel_plot_t, [y[2] for y in self.angular_velocities], weight=2, axis=1)
+
+            add_line_series("Angular Vel", "cmd_vy", self.vel_plot_t, [y[1] for y in self.vel_cmd], weight=2, axis=1)
 
         except Empty:
             pass
