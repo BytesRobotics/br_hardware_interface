@@ -310,12 +310,10 @@ void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time
 {
 
   /// Use PID and kinematics model to update motors
-  double angular_velocity_left_setpoint;
-  double angular_velocity_right_setpoint;
 
   /// Kinematics model
-  angular_velocity_right_setpoint = (velocity_x_ + velocity_theta_ * wheel_separation_ / 2) / (wheel_diameter_ / 2);
-  angular_velocity_left_setpoint = (velocity_x_ - velocity_theta_ * wheel_separation_ / 2) / (wheel_diameter_ / 2);
+  double angular_velocity_right_setpoint = (velocity_x_ + velocity_theta_ * wheel_separation_ / 2) / (wheel_diameter_ / 2);
+  double angular_velocity_left_setpoint = (velocity_x_ - velocity_theta_ * wheel_separation_ / 2) / (wheel_diameter_ / 2);
 
   /// Run PIDs
   double p_term, i_term, d_term;
