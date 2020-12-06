@@ -314,14 +314,8 @@ void BRHardwareInterface::write(std::chrono::steady_clock::duration elapsed_time
   double angular_velocity_right_setpoint;
 
   /// Kinematics model
-  if (velocity_x_ == 0) {
-    angular_velocity_right_setpoint = (velocity_theta_ * wheel_separation_ / 2) /
-      (wheel_diameter_ / 2);
-    angular_velocity_left_setpoint = -angular_velocity_right_setpoint;
-  } else {
-    angular_velocity_right_setpoint = (velocity_x_ + velocity_theta_ / 2) / (wheel_diameter_ / 2);
-    angular_velocity_left_setpoint = (velocity_x_ - velocity_theta_ / 2) / (wheel_diameter_ / 2);
-  }
+  angular_velocity_right_setpoint = (velocity_x_ + velocity_theta_ * wheel_separation_ / 2) / (wheel_diameter_ / 2);
+  angular_velocity_left_setpoint = (velocity_x_ - velocity_theta_ * wheel_separation_ / 2) / (wheel_diameter_ / 2);
 
   /// Run PIDs
   double p_term, i_term, d_term;

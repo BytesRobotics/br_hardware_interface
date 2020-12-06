@@ -26,6 +26,7 @@ class IntrospectionGui:
         self.cmd_vel_queue = cmd_vel_queue
         self.odom_queue = odom_queue
         self.t260_rotation = R.from_quat([0.000, -0.455, 0.000, 0.891])
+        self.t260_translation = [0.150, 0.000, 0.213]
 
         self.t0 = stamp_to_float(self.debug_queue.get().header.stamp)
         self.play = True
@@ -192,8 +193,8 @@ class IntrospectionGui:
             vel = [odom_twist.linear.x, odom_twist.linear.y, odom_twist.linear.z]
             ang_vel = [odom_twist.angular.x, odom_twist.angular.y, odom_twist.angular.z]
 
-            vel = self.t260_rotation.apply(vel)
-            ang_vel = self.t260_rotation.apply(ang_vel)
+            # vel = self.t260_rotation.apply(vel)
+            # ang_vel = self.t260_rotation.apply(ang_vel)
             x = vel[0]
             y = ang_vel[2]
             # print("linear", vel, "angular", ang_vel)
