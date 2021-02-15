@@ -64,7 +64,7 @@ const int outGoingPacketLength = 55;
 //Function for converting input (-1000 to 1000) to microseconds (1000 to 2000)
 inline int calculateHardwareValues(int input) {
   input = constrain(input, -1000, 1000);
-  return map(input, -1000, 1000, -255, 255); //0-255 speend and +/- for direction
+  return map(input, -1000, 1000, -65535, 65535); //0-255 speend and +/- for direction
 }
 
 // Go from 16 bit to 32 bit two's complement
