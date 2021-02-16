@@ -77,7 +77,6 @@ class BRHardwareInterface : public rclcpp::Node
   /// State Variables
   long initial_left_encoder_position_, initial_right_encoder_position_;
   double last_left_encoder_position_, last_right_encoder_position_;
-  std::array<double, 10> left_encoder_history_, right_encoder_history_;
   double left_wheel_angular_velocity_ {}, right_wheel_angular_velocity_ {};
   double velocity_x_ {}, velocity_theta_ {}; //! Set points from cmd_vel
   double control_deadzone_;
